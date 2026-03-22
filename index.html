@@ -7,8 +7,8 @@
 
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-
     <link rel="stylesheet" href="vv-team-style.css">
 </head>
 <body>
@@ -20,24 +20,51 @@
         <div class="lb-nav lb-next" onclick="lbNext(event)"><i class="fas fa-chevron-right"></i></div>
     </div>
 
+    <!-- LOGIN SCREEN — Premium Email & Parolă -->
     <div id="login-screen">
         <div class="logo-box">VV TEAM</div>
         <div class="logo-sub">Central Command</div>
-        <input type="password" id="ceo-pass" class="login-input" placeholder="ACCESS CODE">
-        <button class="login-btn" onclick="checkLogin()">Enter System</button>
+
+        <input type="email" id="ceo-email"
+            class="login-input"
+            placeholder="EMAIL CEO"
+            autocomplete="email"
+            style="margin-bottom:12px;">
+
+        <input type="password" id="ceo-pass"
+            class="login-input"
+            placeholder="PAROLĂ"
+            autocomplete="current-password"
+            style="margin-bottom:8px;">
+
+        <div id="login-error" style="
+            display:none;
+            color:#ff3b30;
+            font-size:12px;
+            margin-bottom:16px;
+            text-align:center;
+            letter-spacing:0.5px;
+            width:100%;
+            max-width:320px;
+        "></div>
+
+        <button id="login-btn" class="login-btn" onclick="checkLogin()">
+            INTRĂ ÎN SISTEM
+        </button>
     </div>
 
+    <!-- SIDEBAR -->
     <div class="sidebar">
         <div class="sidebar-header">
             <div class="sidebar-title">VV TEAM.</div>
             <div class="sidebar-subtitle">Control Panel</div>
         </div>
-        
+
         <div class="system-money-box">
             <div class="money-label">Masă Monetară Sistem</div>
             <div class="money-value" id="total-vv-bank">0 VV</div>
         </div>
-        
+
         <div class="nav-item active" onclick="switchSection('feed', this)">
             <i class="fas fa-stream"></i> Global Intel Feed
         </div>
@@ -54,21 +81,24 @@
         <div class="nav-item" onclick="switchSection('keys', this)">
             <i class="fas fa-key"></i> Chei Acces Beta
         </div>
-        <div style="margin-top: auto;"></div>
-        <div class="nav-item" onclick="location.reload()">
+        <div style="margin-top:auto;"></div>
+        <div class="nav-item" onclick="logoutCEO()">
             <i class="fas fa-sign-out-alt"></i> Deconectare
         </div>
     </div>
 
+    <!-- MAIN CONTENT -->
     <div class="main-content">
-        
+
         <div id="feed-section" class="section active">
             <div class="section-header-row">
                 <div>
                     <div class="section-title">Global Intel Feed</div>
-                    <div class="section-desc">Toate fotografiile și rapoartele valide trimise de agenți în timp real.</div>
+                    <div class="section-desc">Toate fotografiile și rapoartele valide trimise de Insideri în timp real.</div>
                 </div>
-                <button class="btn-delete-all" onclick="deleteAllBetaData()"><i class="fas fa-trash-alt"></i> DELETE ALL (WIPE SYSTEM)</button>
+                <button class="btn-delete-all" onclick="deleteAllBetaData()">
+                    <i class="fas fa-trash-alt"></i> DELETE ALL
+                </button>
             </div>
             <div class="grid-container" id="feed-container">
                 <div style="color:var(--text-muted);">Se încarcă datele...</div>
@@ -79,11 +109,11 @@
             <div class="section-header-row">
                 <div>
                     <div class="section-title">Dispute Escrow</div>
-                    <div class="section-desc">Misiuni raportate de clienți. Verifică intel-ul și decide.</div>
+                    <div class="section-desc">Misiuni contestate. Verifică dovada și decide.</div>
                 </div>
             </div>
             <div class="grid-container" id="disputes-container">
-                <div style="color:var(--text-muted);">Nicio dispută activă. Sistem curat.</div>
+                <div style="color:var(--text-muted);">Nicio dispută activă.</div>
             </div>
         </div>
 
@@ -91,12 +121,12 @@
             <div class="section-header-row">
                 <div>
                     <div class="section-title">Feedback & Suport</div>
-                    <div class="section-desc">Mesaje primite de la clienți și agenți din aplicație.</div>
+                    <div class="section-desc">Mesaje primite de la Insideri și clienți.</div>
                 </div>
             </div>
             <table class="vv-table">
                 <thead>
-                    <tr><th>Agent / Client</th><th>Mesaj</th><th>Status</th><th>Acțiune</th></tr>
+                    <tr><th>Insider / Client</th><th>Mesaj</th><th>Status</th><th>Acțiune</th></tr>
                 </thead>
                 <tbody id="feedback-body">
                     <tr><td colspan="4" style="text-align:center; color:var(--text-muted);">Niciun mesaj nou.</td></tr>
@@ -107,16 +137,16 @@
         <div id="leaderboard-section" class="section">
             <div class="section-header-row">
                 <div>
-                    <div class="section-title">Rețea Agenți & Status VV Onyx</div>
-                    <div class="section-desc">Clasamentul agenților în funcție de balanța VV.</div>
+                    <div class="section-title">Rețea Insideri & VV Onyx</div>
+                    <div class="section-desc">Clasamentul Insiderilor după balanța VV.</div>
                 </div>
             </div>
             <table class="vv-table">
                 <thead>
-                    <tr><th>Rank</th><th>Alias Agent</th><th>Balanță (VV Coins)</th><th>Status Abonament</th></tr>
+                    <tr><th>Rank</th><th>Alias</th><th>Balanță VV</th><th>Status</th></tr>
                 </thead>
                 <tbody id="leaderboard-body">
-                    <tr><td colspan="4" style="text-align:center; color:var(--text-muted);">Se sincronizează rețeaua...</td></tr>
+                    <tr><td colspan="4" style="text-align:center; color:var(--text-muted);">Se sincronizează...</td></tr>
                 </tbody>
             </table>
         </div>
@@ -125,11 +155,13 @@
             <div class="section-header-row">
                 <div>
                     <div class="section-title">Management Chei Beta</div>
-                    <div class="section-desc">Generează coduri unice pentru noii agenți.</div>
+                    <div class="section-desc">Generează coduri unice pentru noii Insideri.</div>
                 </div>
             </div>
             <div class="key-generator-card">
-                <button class="btn-primary" onclick="generateKey()"><i class="fas fa-plus"></i> Generează Cheie Nouă</button>
+                <button class="btn-primary" onclick="generateKey()">
+                    <i class="fas fa-plus"></i> Generează Cheie Nouă
+                </button>
                 <div id="keys-list"></div>
             </div>
         </div>
