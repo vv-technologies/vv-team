@@ -7,6 +7,7 @@ const firebaseConfig = {
 };
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
+const authCEO = firebase.auth();
 
 let isFirstDisputeLoad = true;
 let audioContext = null;
@@ -59,19 +60,78 @@ function playAlertSound() {
     } catch(e) { console.log("Audio nesuportat."); }
 }
 
-// ================= LOGIN =================
-function checkLogin() {
-    let pass = document.getElementById('ceo-pass').value;
-    if(pass === "CEO2026") {
+// ================= LOGIN CEO — Email & Parolă =================
+
+// Mentinem sesiunea activa la refresh
+firebase.auth().onAuthStateChanged(user => {
+    if (user) {
+        // CEO deja logat — afisam dashboardul direct
         if (!audioContext) audioContext = new (window.AudioContext || window.webkitAudioContext)();
         document.getElementById('login-screen').style.opacity = '0';
-        setTimeout(() => { 
-            document.getElementById('login-screen').style.display = 'none'; 
+        setTimeout(() => {
+            document.getElementById('login-screen').style.display = 'none';
             initDashboard();
-        }, 500);
-    } else { alert("Acces Respins."); }
+        }, 300);
+    }
+    // Daca nu e logat — ramane pe login screen
+});
+
+function checkLogin() {
+    const email = document.getElementById('ceo-email').value.trim();
+    const pass = document.getElementById('ceo-pass').value.trim();
+    const btn = document.getElementById('login-btn');
+    const errMsg = document.getElementById('login-error');
+
+    if (!email || !pass) {
+        errMsg.textContent = 'Completează email și parolă.';
+        errMsg.style.display = 'block';
+        return;
+    }
+
+    btn.textContent = 'SE VERIFICĂ...';
+    btn.style.opacity = '0.6';
+    errMsg.style.display = 'none';
+
+    if (!audioContext) audioContext = new (window.AudioContext || window.webkitAudioContext)();
+
+    firebase.auth().signInWithEmailAndPassword(email, pass)
+        .then(cred => {
+            // Login reusit
+            btn.textContent = 'AUTENTIFICAT ✓';
+            document.getElementById('login-screen').style.opacity = '0';
+            setTimeout(() => {
+                document.getElementById('login-screen').style.display = 'none';
+                initDashboard();
+            }, 400);
+        })
+        .catch(err => {
+            btn.textContent = 'INTRĂ ÎN SISTEM';
+            btn.style.opacity = '1';
+            if (err.code === 'auth/wrong-password' || err.code === 'auth/user-not-found') {
+                errMsg.textContent = 'Email sau parolă incorectă.';
+            } else if (err.code === 'auth/invalid-email') {
+                errMsg.textContent = 'Email invalid.';
+            } else {
+                errMsg.textContent = 'Eroare conexiune. Încearcă din nou.';
+            }
+            errMsg.style.display = 'block';
+        });
 }
-document.getElementById("ceo-pass").addEventListener("keypress", function(event) { if (event.key === "Enter") checkLogin(); });
+
+// Enter pe oricare câmp declanșează login
+document.addEventListener('DOMContentLoaded', () => {
+    const emailInput = document.getElementById('ceo-email');
+    const passInput = document.getElementById('ceo-pass');
+    if (emailInput) emailInput.addEventListener('keypress', e => { if(e.key === 'Enter') checkLogin(); });
+    if (passInput) passInput.addEventListener('keypress', e => { if(e.key === 'Enter') checkLogin(); });
+});
+
+// ================= LOGOUT CEO =================
+function logoutCEO() {
+    firebase.auth().signOut().then(() => {
+        location.reload();
+    });
+}
 
 // ================= NAVIGATIE =================
 function switchSection(id, element) {
