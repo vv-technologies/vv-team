@@ -153,6 +153,7 @@ function initDashboard() {
     loadLeaderboard(); 
     loadFeedback();
     loadKeys();
+    loadTalentPool();
 }
 
 // ================= 1. FEED — 24H GOD MODE =================
@@ -481,30 +482,149 @@ async function deleteAllBetaData() {
     } catch(e) { alert("Eroare la ștergere: " + e.message); }
 }
 
-// ================= 5. CHEI =================
+// ================= TALENT POOL =================
+function loadTalentPool() {
+    db.collection('talent_pool')
+        .orderBy('createdAt', 'desc')
+        .onSnapshot(snap => {
+            const container = document.getElementById('talent-container');
+            if (!container) return;
+            container.innerHTML = '';
+
+            if (snap.empty) {
+                container.innerHTML = '<div style="color:var(--text-muted);">Nicio aplicație încă. Împărtășește VV cu lumea!</div>';
+                return;
+            }
+
+            snap.forEach(doc => {
+                const d = doc.data();
+                const date = d.createdAt?.toDate().toLocaleString('ro-RO') || '—';
+                container.innerHTML += `
+                    <div style="
+                        background:var(--glass-bg);
+                        border:1px solid var(--glass-border);
+                        border-radius:16px; padding:20px;
+                        display:flex; flex-direction:column; gap:8px;
+                    ">
+                        <div style="display:flex; justify-content:space-between; align-items:center;">
+                            <span style="font-size:14px; font-weight:800; color:#fff;">${d.alias || 'INSIDER'}</span>
+                            <span style="font-size:10px; color:var(--text-muted);">${date}</span>
+                        </div>
+                        <div style="font-size:13px; color:rgba(255,255,255,0.7);">
+                            <strong style="color:rgba(255,255,255,0.5);">Skills:</strong> ${d.skill}
+                        </div>
+                        ${d.portfolio && d.portfolio !== 'N/A' ? `
+                        <a href="${d.portfolio}" target="_blank" style="
+                            font-size:12px; color:var(--vv-blue);
+                            text-decoration:none; font-weight:600;
+                        ">
+                            <i class="fas fa-link"></i> ${d.portfolio}
+                        </a>` : ''}
+                        <div style="display:flex; gap:8px; margin-top:4px;">
+                            <button onclick="updateTalentStatus('${doc.id}', 'contacted')" style="
+                                flex:1; padding:10px; border:none; border-radius:10px;
+                                background:rgba(10,132,255,0.15); color:#0A84FF;
+                                border:1px solid rgba(10,132,255,0.3);
+                                font-weight:700; font-size:11px; cursor:pointer;">
+                                CONTACTEAZĂ
+                            </button>
+                            <button onclick="updateTalentStatus('${doc.id}', 'rejected')" style="
+                                flex:1; padding:10px; border:none; border-radius:10px;
+                                background:rgba(255,59,48,0.1); color:#ff3b30;
+                                border:1px solid rgba(255,59,48,0.25);
+                                font-weight:700; font-size:11px; cursor:pointer;">
+                                RESPINGE
+                            </button>
+                        </div>
+                    </div>
+                `;
+            });
+        });
+}
+
+async function updateTalentStatus(docId, status) {
+    try {
+        await db.collection('talent_pool').doc(docId).update({ status });
+        alert(status === 'contacted' ? '✅ Marcat ca Contactat!' : '❌ Aplicație respinsă.');
+    } catch(e) { alert('Eroare: ' + e.message); }
+}
+
+// ================= 5. CHEI — GOD MODE DASHBOARD =================
 function loadKeys() {
     db.collection('access_keys').orderBy('createdAt', 'desc').onSnapshot(snap => {
         const list = document.getElementById('keys-list');
+        const dashboard = document.getElementById('keys-dashboard');
+        if (!list) return;
+
+        let totalKeys = 0;
+        let activeKeys = 0;
+        let usedKeys = 0;
+        let userGenerated = 0;
+
         list.innerHTML = '';
+
         snap.forEach(doc => {
-            const data = doc.data();
-            const statusColor = data.active ? 'var(--safe-green)' : '#ff3b30';
-            const statusText = data.active ? 'ACTIV ✓' : 'DEZACTIVAT';
+            const d = doc.data();
+            totalKeys++;
+            if (d.active) activeKeys++;
+            if (d.used) usedKeys++;
+            if (d.generatedBy) userGenerated++;
+
+            const statusColor = d.active ? 'var(--safe-green)' : '#ff3b30';
+            const statusText = d.active ? 'ACTIV' : 'DEZACTIVAT';
+            const sourceText = d.generatedBy
+                ? `<span style="font-size:10px; color:rgba(255,255,255,0.3);">de ${d.generatedByAlias || 'INSIDER'}</span>`
+                : `<span style="font-size:10px; color:rgba(255,255,255,0.3);">CEO</span>`;
+
+            const date = d.createdAt?.toDate().toLocaleString('ro-RO', {
+                day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit'
+            }) || '—';
+
             list.innerHTML += `
-                <div class="key-item">
-                    <span>${data.key}</span>
-                    <div style="display:flex; align-items:center; gap:10px;">
-                        <span class="key-status" style="color:${statusColor};">${statusText}</span>
-                        <button onclick="toggleKey('${doc.id}', ${data.active})" style="
-                            background: ${data.active ? 'rgba(255,59,48,0.15)' : 'rgba(52,199,89,0.15)'};
-                            border: 1px solid ${data.active ? 'rgba(255,59,48,0.3)' : 'rgba(52,199,89,0.3)'};
-                            color: ${data.active ? '#ff3b30' : '#34c759'};
-                            padding: 4px 10px; border-radius: 6px; font-size: 11px;
-                            font-weight: 700; cursor: pointer; letter-spacing: 0.5px;
-                        ">${data.active ? 'DEZACTIVEAZĂ' : 'ACTIVEAZĂ'}</button>
+                <div class="key-item" style="flex-wrap:wrap; gap:8px;">
+                    <div style="display:flex; flex-direction:column; gap:2px;">
+                        <span style="font-family:monospace; font-size:15px; letter-spacing:2px;">${d.key}</span>
+                        <div style="display:flex; gap:8px; align-items:center;">
+                            ${sourceText}
+                            <span style="font-size:10px; color:rgba(255,255,255,0.2);">${date}</span>
+                        </div>
+                    </div>
+                    <div style="display:flex; align-items:center; gap:8px; margin-left:auto;">
+                        <span style="font-size:11px; font-weight:700; color:${statusColor};">${statusText}</span>
+                        <button onclick="toggleKey('${doc.id}', ${d.active})" style="
+                            background:${d.active ? 'rgba(255,59,48,0.12)' : 'rgba(52,199,89,0.12)'};
+                            border:1px solid ${d.active ? 'rgba(255,59,48,0.25)' : 'rgba(52,199,89,0.25)'};
+                            color:${d.active ? '#ff3b30' : '#34c759'};
+                            padding:5px 12px; border-radius:8px; font-size:11px;
+                            font-weight:700; cursor:pointer;
+                        ">${d.active ? 'REVOKE' : 'ACTIVEAZĂ'}</button>
                     </div>
                 </div>`;
         });
+
+        // Update dashboard stats
+        if (dashboard) {
+            dashboard.innerHTML = `
+                <div style="display:grid; grid-template-columns:repeat(2,1fr); gap:10px; margin-bottom:20px;">
+                    <div style="background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08); border-radius:12px; padding:14px; text-align:center;">
+                        <div style="font-size:24px; font-weight:900; color:#fff;">${totalKeys}</div>
+                        <div style="font-size:10px; color:rgba(255,255,255,0.3); letter-spacing:1px; margin-top:2px;">TOTAL CHEI</div>
+                    </div>
+                    <div style="background:rgba(52,199,89,0.06); border:1px solid rgba(52,199,89,0.2); border-radius:12px; padding:14px; text-align:center;">
+                        <div style="font-size:24px; font-weight:900; color:#34c759;">${activeKeys}</div>
+                        <div style="font-size:10px; color:rgba(52,199,89,0.5); letter-spacing:1px; margin-top:2px;">ACTIVE</div>
+                    </div>
+                    <div style="background:rgba(10,132,255,0.06); border:1px solid rgba(10,132,255,0.2); border-radius:12px; padding:14px; text-align:center;">
+                        <div style="font-size:24px; font-weight:900; color:#0A84FF;">${userGenerated}</div>
+                        <div style="font-size:10px; color:rgba(10,132,255,0.5); letter-spacing:1px; margin-top:2px;">DE INSIDERI</div>
+                    </div>
+                    <div style="background:rgba(255,149,0,0.06); border:1px solid rgba(255,149,0,0.2); border-radius:12px; padding:14px; text-align:center;">
+                        <div style="font-size:24px; font-weight:900; color:#ff9500;">${totalKeys - activeKeys}</div>
+                        <div style="font-size:10px; color:rgba(255,149,0,0.5); letter-spacing:1px; margin-top:2px;">REVOCATE</div>
+                    </div>
+                </div>
+            `;
+        }
     });
 }
 
