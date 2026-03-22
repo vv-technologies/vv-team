@@ -155,39 +155,207 @@ function initDashboard() {
     loadKeys();
 }
 
-// ================= 1. FEED =================
+// ================= 1. FEED — 24H GOD MODE =================
 function loadGlobalFeed() {
-    db.collection('photos').orderBy('timestamp', 'desc').onSnapshot(snap => {
-        const container = document.getElementById('feed-container');
-        container.innerHTML = '';
-        currentFeedPhotos = []; 
-        let imgIndex = 0;
+    const cutoff24h = Date.now() - (24 * 60 * 60 * 1000);
 
-        if(snap.empty) { container.innerHTML = '<div style="color:var(--text-muted);">Niciun intel înregistrat.</div>'; return; }
+    db.collection('photos')
+        .orderBy('timestamp', 'desc')
+        .onSnapshot(snap => {
+            const container = document.getElementById('feed-container');
+            container.innerHTML = '';
+            currentFeedPhotos = [];
+            let imgIndex = 0;
+            let count = 0;
 
-        snap.forEach(doc => {
-            let d = doc.data();
-            currentFeedPhotos.push(d.url);
-            
-            let date = new Date(d.timestamp).toLocaleString('ro-RO', {hour: '2-digit', minute:'2-digit', day:'2-digit', month:'short'});
-            let flagHtml = d.flagged ? `<div class="flag-badge"><i class="fas fa-exclamation-triangle"></i> ALERTĂ FRAUDĂ P2P</div>` : '';
-            
-            container.innerHTML += `
-                <div class="photo-card">
-                    <img src="${d.url}" class="photo-img" onclick="openLightbox('feed', ${imgIndex})" title="Click pentru Zoom">
-                    <div class="photo-info">
-                        ${flagHtml}
-                        <div class="photo-msg">"${d.message}"</div>
-                        <div class="photo-meta">
-                            <span><i class="fas fa-clock"></i> ${date}</span>
-                            <span>UID: ${d.agentId.substring(0,5)}</span>
+            if (snap.empty) {
+                container.innerHTML = '<div style="color:var(--text-muted);">Nicio captură în ultimele 24h.</div>';
+                return;
+            }
+
+            snap.forEach(doc => {
+                const d = doc.data();
+                // Filtram doar ultimele 24h
+                if (d.timestamp < cutoff24h) return;
+                count++;
+                currentFeedPhotos.push(d.url);
+
+                const date = new Date(d.timestamp).toLocaleString('ro-RO', {
+                    hour: '2-digit', minute: '2-digit',
+                    day: '2-digit', month: 'short'
+                });
+                const gpsStr = d.gpsLat
+                    ? `${d.gpsLat.toFixed(4)}, ${d.gpsLng.toFixed(4)}`
+                    : 'GPS N/A';
+                const flagHtml = d.flagged
+                    ? `<div class="flag-badge"><i class="fas fa-exclamation-triangle"></i> ALERTAT</div>`
+                    : '';
+
+                container.innerHTML += `
+                    <div class="photo-card">
+                        <div style="position:relative;">
+                            <img src="${d.url}" class="photo-img"
+                                onclick="openLightbox('feed', ${imgIndex})"
+                                title="Click pentru Zoom">
+                            <div style="
+                                position:absolute; bottom:0; left:0; right:0;
+                                background:rgba(0,0,0,0.6);
+                                backdrop-filter:blur(8px);
+                                -webkit-backdrop-filter:blur(8px);
+                                padding:8px 12px;
+                            ">
+                                <div style="font-size:10px; color:rgba(255,255,255,0.5); letter-spacing:1px;">VV PROOF</div>
+                                <div style="font-size:11px; color:rgba(255,255,255,0.7);">📍 ${gpsStr}</div>
+                            </div>
+                        </div>
+                        <div class="photo-info">
+                            ${flagHtml}
+                            <div class="photo-msg">"${d.message || 'Captură VV'}"</div>
+                            <div class="photo-meta">
+                                <span><i class="fas fa-clock"></i> ${date}</span>
+                                <span style="cursor:pointer; color:var(--vv-blue);"
+                                    onclick="openModerateModal('${doc.id}', '${d.agentId}', '${d.alias || 'INSIDER'}')">
+                                    ${(d.alias || 'INSIDER').substring(0,8)} ›
+                                </span>
+                            </div>
+                            <div style="display:flex; gap:8px; margin-top:12px;">
+                                <button onclick="moderatePhoto('${doc.id}', '${d.agentId}', true)"
+                                    style="flex:1; padding:10px; border:none; border-radius:10px;
+                                    background:rgba(52,199,89,0.15); color:#34c759;
+                                    border:1px solid rgba(52,199,89,0.3);
+                                    font-weight:700; font-size:12px; cursor:pointer;">
+                                    ✓ APROBĂ
+                                </button>
+                                <button onclick="moderatePhoto('${doc.id}', '${d.agentId}', false)"
+                                    style="flex:1; padding:10px; border:none; border-radius:10px;
+                                    background:rgba(255,59,48,0.15); color:#ff3b30;
+                                    border:1px solid rgba(255,59,48,0.3);
+                                    font-weight:700; font-size:12px; cursor:pointer;">
+                                    ✕ REFUZĂ
+                                </button>
+                            </div>
                         </div>
                     </div>
-                </div>
-            `;
-            imgIndex++;
+                `;
+                imgIndex++;
+            });
+
+            if (count === 0) {
+                container.innerHTML = '<div style="color:var(--text-muted);">Nicio captură în ultimele 24h.</div>';
+            }
         });
-    });
+}
+
+// Aprobare / Refuz captură
+async function moderatePhoto(photoId, agentId, approved) {
+    try {
+        if (approved) {
+            // Gasim misiunea asociata si dam reward
+            const photoDoc = await db.collection('photos').doc(photoId).get();
+            const reward = photoDoc.data()?.reward || 0;
+            if (reward > 0 && agentId) {
+                await db.collection('users').doc(agentId).update({
+                    balance: firebase.firestore.FieldValue.increment(reward)
+                });
+            }
+            await db.collection('photos').doc(photoId).update({ approved: true, flagged: false });
+            alert('✅ Captură aprobată! VV Coins transferați.');
+        } else {
+            await db.collection('photos').doc(photoId).update({ approved: false, flagged: true });
+            alert('❌ Captură refuzată și marcată.');
+        }
+    } catch(e) { alert('Eroare: ' + e.message); }
+}
+
+// Modal moderare Insider
+function openModerateModal(photoId, agentId, alias) {
+    const existing = document.getElementById('moderate-modal');
+    if (existing) existing.remove();
+
+    const modal = document.createElement('div');
+    modal.id = 'moderate-modal';
+    modal.style.cssText = `
+        position:fixed; inset:0; z-index:100000;
+        background:rgba(0,0,0,0.75);
+        backdrop-filter:blur(20px);
+        -webkit-backdrop-filter:blur(20px);
+        display:flex; align-items:center; justify-content:center;
+    `;
+    modal.innerHTML = `
+        <div style="
+            background:rgba(12,12,18,0.98);
+            backdrop-filter:blur(30px);
+            -webkit-backdrop-filter:blur(30px);
+            border:1px solid rgba(255,255,255,0.1);
+            border-radius:24px;
+            padding:32px 28px;
+            width:90%; max-width:360px;
+        ">
+            <div style="font-size:11px; color:rgba(255,255,255,0.3); letter-spacing:3px; margin-bottom:8px;">CONTROL INSIDER</div>
+            <div style="font-size:20px; font-weight:900; color:#fff; margin-bottom:24px;">${alias}</div>
+
+            <button onclick="sanctionInsider('${agentId}', 'warn')"
+                style="width:100%; padding:14px; margin-bottom:10px; border-radius:12px;
+                background:rgba(10,132,255,0.1); color:#0A84FF;
+                border:1px solid rgba(10,132,255,0.3);
+                font-weight:700; font-size:13px; cursor:pointer; text-align:left;">
+                <i class="fas fa-bell" style="margin-right:10px;"></i> Trimite Avertisment
+            </button>
+
+            <button onclick="sanctionInsider('${agentId}', 'penalize')"
+                style="width:100%; padding:14px; margin-bottom:10px; border-radius:12px;
+                background:rgba(255,149,0,0.1); color:#ff9500;
+                border:1px solid rgba(255,149,0,0.3);
+                font-weight:700; font-size:13px; cursor:pointer; text-align:left;">
+                <i class="fas fa-coins" style="margin-right:10px;"></i> Penalizare 50 VV Coins
+            </button>
+
+            <button onclick="sanctionInsider('${agentId}', 'ban')"
+                style="width:100%; padding:14px; margin-bottom:20px; border-radius:12px;
+                background:rgba(255,59,48,0.1); color:#ff3b30;
+                border:1px solid rgba(255,59,48,0.3);
+                font-weight:700; font-size:13px; cursor:pointer; text-align:left;">
+                <i class="fas fa-ban" style="margin-right:10px;"></i> Ban / Dezactivează Contul
+            </button>
+
+            <button onclick="document.getElementById('moderate-modal').remove()"
+                style="width:100%; padding:12px; border-radius:12px;
+                background:transparent; color:rgba(255,255,255,0.3);
+                border:1px solid rgba(255,255,255,0.08);
+                font-weight:600; font-size:12px; cursor:pointer;">
+                ÎNCHIDE
+            </button>
+        </div>
+    `;
+    document.body.appendChild(modal);
+}
+
+async function sanctionInsider(agentId, type) {
+    try {
+        if (type === 'warn') {
+            await db.collection('inbox').add({
+                to: agentId,
+                from: 'CEO',
+                message: '⚠️ Ai primit un avertisment oficial de la VVTeam. Respectă regulamentul.',
+                read: false,
+                createdAt: firebase.firestore.FieldValue.serverTimestamp()
+            });
+            alert('✅ Avertisment trimis Insider-ului.');
+        } else if (type === 'penalize') {
+            await db.collection('users').doc(agentId).update({
+                balance: firebase.firestore.FieldValue.increment(-50)
+            });
+            alert('✅ 50 VV Coins deduse din balanță.');
+        } else if (type === 'ban') {
+            if (!confirm('Ești sigur că vrei să banezi acest Insider?')) return;
+            await db.collection('users').doc(agentId).update({
+                banned: true,
+                balance: 0
+            });
+            alert('✅ Insider banat și fonduri blocate.');
+        }
+        document.getElementById('moderate-modal')?.remove();
+    } catch(e) { alert('Eroare: ' + e.message); }
 }
 
 // ================= 2. DISPUTE =================
