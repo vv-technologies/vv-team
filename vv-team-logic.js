@@ -62,18 +62,24 @@ function playAlertSound() {
 
 // ================= LOGIN CEO — Email & Parolă =================
 
-// Mentinem sesiunea activa la refresh
+// Verificam sesiunea — DOAR CEO real, nu useri anonimi
 firebase.auth().onAuthStateChanged(user => {
-    if (user) {
-        // CEO deja logat — afisam dashboardul direct
+    if (user && !user.isAnonymous) {
+        // E logat cu email/parola — CEO real
         if (!audioContext) audioContext = new (window.AudioContext || window.webkitAudioContext)();
         document.getElementById('login-screen').style.opacity = '0';
         setTimeout(() => {
             document.getElementById('login-screen').style.display = 'none';
             initDashboard();
         }, 300);
+    } else if (user && user.isAnonymous) {
+        // E un Insider anonim din VV Beta — delogam si aratam loginul
+        firebase.auth().signOut();
+        document.getElementById('login-screen').style.display = 'flex';
+    } else {
+        // Niciun user — aratam loginul
+        document.getElementById('login-screen').style.display = 'flex';
     }
-    // Daca nu e logat — ramane pe login screen
 });
 
 function checkLogin() {
