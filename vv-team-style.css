@@ -288,3 +288,201 @@ body {
     .action-row { flex-direction: column; }
     .btn-approve, .btn-reject { min-width: unset; }
 }
+
+/* ============================================
+   iPad & Ecrane Mari — Dashboard Profesional
+   ============================================ */
+
+/* Login form — niciodata nu se intinde prea mult */
+#login-screen {
+    padding: 40px 20px;
+}
+
+.login-input,
+.login-btn {
+    max-width: 400px !important;
+    width: 100% !important;
+}
+
+/* iPad Portrait (768px+) */
+@media (min-width: 768px) and (max-width: 1024px) {
+
+    body {
+        flex-direction: row !important;
+        overflow: hidden;
+    }
+
+    .sidebar {
+        width: 220px !important;
+        min-width: 220px !important;
+        flex-direction: column !important;
+        flex-wrap: nowrap !important;
+        overflow-y: auto;
+        height: 100vh;
+        border-bottom: none !important;
+        border-right: 1px solid var(--glass-border) !important;
+        padding: 30px 0 !important;
+    }
+
+    .sidebar-header {
+        width: auto !important;
+        padding: 0 20px 15px !important;
+        border-bottom: 1px solid var(--glass-border);
+        margin-bottom: 15px !important;
+        flex-direction: column !important;
+        align-items: flex-start !important;
+    }
+
+    .system-money-box {
+        width: auto !important;
+        padding: 0 20px 15px !important;
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        margin-bottom: 10px !important;
+    }
+
+    .money-label { margin-bottom: 4px !important; }
+
+    .nav-item {
+        justify-content: flex-start !important;
+        text-align: left !important;
+        padding: 14px 20px !important;
+        font-size: 13px !important;
+        min-width: unset !important;
+        flex: none !important;
+        border-radius: 0 !important;
+        border-left: 3px solid transparent !important;
+        border-bottom: none !important;
+    }
+
+    .nav-item.active {
+        border-left-color: var(--vv-blue) !important;
+        border-bottom: none !important;
+    }
+
+    .main-content {
+        flex: 1 !important;
+        padding: 30px 30px !important;
+        overflow-y: auto !important;
+        height: 100vh !important;
+    }
+
+    /* Login centrat pe iPad */
+    #login-screen {
+        padding: 60px 40px !important;
+    }
+
+    .login-input,
+    .login-btn {
+        max-width: 360px !important;
+    }
+
+    /* Grid 2 coloane pentru feed */
+    .grid-container {
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 18px !important;
+    }
+
+    /* Tabel mai compact */
+    .vv-table th,
+    .vv-table td {
+        padding: 12px 14px !important;
+        font-size: 13px !important;
+    }
+
+    /* Keys list mai compact */
+    .key-generator-card {
+        max-width: 100% !important;
+    }
+
+    .key-item {
+        font-size: 14px !important;
+        flex-wrap: nowrap !important;
+    }
+}
+
+/* iPad Landscape & Desktop (1024px+) */
+@media (min-width: 1024px) {
+
+    body {
+        flex-direction: row !important;
+        overflow: hidden;
+    }
+
+    .sidebar {
+        width: 240px !important;
+        min-width: 240px !important;
+        flex-direction: column !important;
+        flex-wrap: nowrap !important;
+        height: 100vh;
+        overflow-y: auto;
+        border-bottom: none !important;
+        border-right: 1px solid var(--glass-border) !important;
+        padding: 30px 0 !important;
+        gap: 0 !important;
+    }
+
+    .sidebar-header {
+        width: auto !important;
+        padding: 0 25px 20px !important;
+        margin-bottom: 10px !important;
+        display: block !important;
+    }
+
+    .system-money-box {
+        width: auto !important;
+        padding: 0 25px 20px !important;
+        margin-bottom: 10px !important;
+        display: block !important;
+    }
+
+    .nav-item {
+        justify-content: flex-start !important;
+        text-align: left !important;
+        padding: 16px 25px !important;
+        flex: none !important;
+        min-width: unset !important;
+        border-radius: 0 !important;
+        border-left: 3px solid transparent !important;
+        border-bottom: none !important;
+        width: 100% !important;
+    }
+
+    .nav-item.active {
+        border-left-color: var(--vv-blue) !important;
+        border-bottom: none !important;
+    }
+
+    .main-content {
+        flex: 1 !important;
+        padding: 40px 50px !important;
+        height: 100vh !important;
+        overflow-y: auto !important;
+    }
+
+    .grid-container {
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)) !important;
+    }
+
+    /* Sectiunea de Header nu se mai rupe */
+    .section-header-row {
+        flex-direction: row !important;
+        flex-wrap: nowrap !important;
+        align-items: flex-start !important;
+    }
+
+    /* Text din tabele nu se mai taie */
+    .vv-table td {
+        overflow-wrap: break-word !important;
+        word-break: break-word !important;
+        max-width: 300px !important;
+    }
+}
+
+/* Fix general — text nu se taie niciodata */
+.section-desc,
+.photo-msg,
+.vv-table td {
+    overflow-wrap: break-word !important;
+    word-break: break-word !important;
+}
