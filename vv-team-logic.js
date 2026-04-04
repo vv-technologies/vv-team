@@ -263,12 +263,20 @@ function loadGlobalFeed() {
 async function approvePhotoCEO(photoId, agentId) {
     try {
         var photoDoc = await db.collection('photos').doc(photoId).get();
-        var reward = photoDoc.data()?.reward || 0;
-        var alias = photoDoc.data()?.alias || 'INSIDER';
-        if (reward > 0 && agentId) await db.collection('users').doc(agentId).update({ balance: firebase.firestore.FieldValue.increment(reward) });
+        var photoData = photoDoc.data() || {};
+        var reward = photoData.reward || 0;
+        var alias  = photoData.alias  || 'INSIDER';
+
+        if (reward > 0 && agentId) {
+            await db.collection('users').doc(agentId).update({ balance: firebase.firestore.FieldValue.increment(reward) });
+        }
         await db.collection('photos').doc(photoId).update({ approved: true, flagged: false });
         addAuditEntry('✅ Dovadă aprobată — ' + alias + ' +' + reward + ' VV');
         showCEOToast('✅ Aprobat! ' + alias + ' +' + reward + ' VV.', 'green');
+
+        // VVhi Shadow Mode — log asincron, non-blocking
+        VVhi.logApproval(photoData);
+
     } catch(e) { showCEOToast('Eroare: ' + e.message, 'red'); }
 }
 
@@ -311,11 +319,23 @@ async function confirmDSAReject(photoId, agentId) {
     var labels = { blur:'Poză neclară', location:'GPS neconfirmat', inappropriate:'Conținut inadecvat', fake:'Dovadă falsificată', duplicate:'Duplicat', other:'Alt motiv' };
     var reasonText = labels[selectedDSAReason] + (customReason ? ': ' + customReason : '');
     try {
+        // Citim datele foto ÎNAINTE de update, pentru VVhi (fără PII)
+        var photoDoc = await db.collection('photos').doc(photoId).get();
+        var photoData = photoDoc.exists ? photoDoc.data() : {};
+
         await db.collection('photos').doc(photoId).update({ approved:false, flagged:true, rejectReason:reasonText });
-        await db.collection('inbox').add({ to:agentId, from:'VVTeam', type:'rejection_dsa', message:'❌ Dovada ta a fost respinsă. Motiv: ' + reasonText + '. Poți retrimite o dovadă nouă.', read:false, createdAt:firebase.firestore.FieldValue.serverTimestamp() });
+        await db.collection('inbox').add({
+            to:agentId, from:'VVTeam', type:'rejection_dsa',
+            message:'❌ Dovada ta a fost respinsă. Motiv: ' + reasonText + '. Poți retrimite o dovadă nouă.',
+            read:false, createdAt:firebase.firestore.FieldValue.serverTimestamp()
+        });
         addAuditEntry('❌ Dovadă respinsă (DSA) — ' + reasonText);
         document.getElementById('dsa-reject-modal')?.remove();
         showCEOToast('❌ Respins. Insider notificat (DSA).', 'red');
+
+        // VVhi Shadow Mode — log asincron, non-blocking
+        VVhi.logRejection(photoData, reasonText);
+
     } catch(e) { showCEOToast('Eroare: ' + e.message, 'red'); }
 }
 
