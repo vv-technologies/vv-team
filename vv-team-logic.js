@@ -631,3 +631,129 @@ async function unbanInsider(uid, alias) {
         document.getElementById('insider-profile-modal')?.remove();
     } catch(e) { showCEOToast('Eroare: ' + e.message, 'red'); }
 }
+
+
+// ================================================================
+// CEO MAP — Harta misiuni în timp real (READ-ONLY)
+// ================================================================
+var ceoMap = null;
+var ceoMarkers = {};
+
+function loadMissionMap() {
+    // Inițializăm harta dacă nu există
+    if (!ceoMap) {
+        ceoMap = L.map('ceo-map', {
+            center: [44.4325, 26.1038], // București
+            zoom: 13,
+            zoomControl: true,
+            attributionControl: false
+        });
+
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+            maxZoom: 19
+        }).addTo(ceoMap);
+    }
+
+    var today = new Date();
+    today.setHours(0, 0, 0, 0);
+    var todayTs = today.getTime();
+
+    // Stats acumulate
+    var statsOpen = 0, statsCompleted = 0, statsVV = 0, missionsTodayCount = 0;
+
+    db.collection('missions').onSnapshot(function(snap) {
+        // Curăță markeri vechi
+        Object.keys(ceoMarkers).forEach(function(id) {
+            try { ceoMap.removeLayer(ceoMarkers[id]); } catch(e) {}
+        });
+        ceoMarkers = {};
+
+        statsOpen = 0; statsCompleted = 0; statsVV = 0; missionsTodayCount = 0;
+        var listContainer = document.getElementById('ceo-missions-list');
+        if (listContainer) listContainer.innerHTML = '';
+        var activeMissions = [];
+
+        snap.forEach(function(doc) {
+            var m = doc.data();
+            var isToday = m.createdAt && m.createdAt.toMillis() >= todayTs;
+            if (isToday) missionsTodayCount++;
+
+            if (m.status === 'open') statsOpen++;
+            if (m.status === 'completed') { statsCompleted++; statsVV += (m.reward || 0); }
+
+            if (!m.lat || !m.lng) return;
+
+            // Culoare marker după status
+            var color = m.status === 'open' ? '#34c759' : m.status === 'completed' ? '#0A84FF' : '#ff9500';
+            var icon = L.divIcon({
+                className: '',
+                html: '<div style="width:14px;height:14px;border-radius:50%;background:' + color + ';border:2px solid rgba(255,255,255,0.5);box-shadow:0 0 8px ' + color + ';"></div>',
+                iconSize: [14, 14], iconAnchor: [7, 7]
+            });
+
+            var marker = L.marker([m.lat, m.lng], { icon: icon }).addTo(ceoMap);
+            marker.bindPopup(
+                '<div style="background:#0a0a0c;color:#fff;padding:10px;border-radius:10px;min-width:180px;">'
+                + '<div style="font-size:10px;color:' + color + ';letter-spacing:2px;font-weight:700;margin-bottom:4px;">' + (m.status || 'unknown').toUpperCase() + '</div>'
+                + '<div style="font-size:13px;font-weight:700;margin-bottom:4px;">' + (m.description || 'Misiune') + '</div>'
+                + '<div style="font-size:12px;color:rgba(255,255,255,0.5);">💰 ' + (m.reward || 0) + ' VV</div>'
+                + '</div>',
+                { className: 'ceo-popup' }
+            );
+            ceoMarkers[doc.id] = marker;
+
+            if (m.status === 'open') activeMissions.push({ id: doc.id, data: m });
+        });
+
+        // Update stats
+        var countEl = document.getElementById('mission-count-today');
+        if (countEl) countEl.textContent = missionsTodayCount;
+        var openEl = document.getElementById('stat-open');
+        if (openEl) openEl.textContent = statsOpen;
+        var compEl = document.getElementById('stat-completed');
+        if (compEl) compEl.textContent = statsCompleted;
+        var vvEl = document.getElementById('stat-vv-circulated');
+        if (vvEl) vvEl.textContent = statsVV + ' VV';
+
+        // Lista misiuni active
+        if (listContainer) {
+            if (activeMissions.length === 0) {
+                listContainer.innerHTML = '<div style="color:var(--text-muted);font-size:13px;padding:10px;">Nicio misiune deschisă acum.</div>';
+            } else {
+                listContainer.innerHTML = '';
+                activeMissions.slice(0, 10).forEach(function(item) {
+                    var m = item.data;
+                    var row = document.createElement('div');
+                    row.style.cssText = 'display:flex;align-items:center;gap:12px;padding:12px 16px;background:rgba(52,199,89,0.05);border:1px solid rgba(52,199,89,0.12);border-radius:12px;cursor:pointer;';
+                    row.innerHTML = '<div style="width:8px;height:8px;border-radius:50%;background:#34c759;box-shadow:0 0 6px #34c759;flex-shrink:0;"></div>'
+                        + '<div style="flex:1;"><div style="font-size:13px;font-weight:700;color:#fff;">' + (m.description||'Misiune') + '</div>'
+                        + '<div style="font-size:11px;color:rgba(255,255,255,0.35);">📍 ' + (m.lat ? m.lat.toFixed(4) + ', ' + m.lng.toFixed(4) : 'GPS N/A') + '</div></div>'
+                        + '<div style="font-size:13px;font-weight:800;color:#D4AF37;">' + (m.reward||0) + ' VV</div>';
+                    row.addEventListener('click', function() {
+                        if (m.lat && m.lng) {
+                            ceoMap.flyTo([m.lat, m.lng], 16, { duration: 1 });
+                        }
+                    });
+                    listContainer.appendChild(row);
+                });
+            }
+        }
+
+        // Invalidate map size (fix pentru tab switch)
+        setTimeout(function() { if (ceoMap) ceoMap.invalidateSize(); }, 100);
+    });
+}
+
+// Inițializăm harta când se deschide tab-ul Map
+var ceoMapLoaded = false;
+var origSwitchSection = switchSection;
+function switchSection(id, element) {
+    origSwitchSection(id, element);
+    if (id === 'map' && !ceoMapLoaded) {
+        ceoMapLoaded = true;
+        setTimeout(function() { loadMissionMap(); }, 150);
+    } else if (id === 'map') {
+        setTimeout(function() { if (ceoMap) ceoMap.invalidateSize(); }, 150);
+    }
+    if (id === 'audit') renderAuditLog();
+}
