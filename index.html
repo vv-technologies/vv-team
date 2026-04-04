@@ -89,6 +89,9 @@
         <div class="nav-item" onclick="switchSection('audit', this)">
             <i class="fas fa-clipboard-list"></i> <span>Audit Log</span>
         </div>
+        <div class="nav-item" onclick="switchSection('sysctl', this)">
+            <i class="fas fa-satellite"></i> <span>System Control</span>
+        </div>
         <div style="margin-top:auto;"></div>
         <div class="nav-item logout-btn" onclick="secureLogoutCEO()">
             <i class="fas fa-lock"></i> <span>LOGOUT SECURIZAT</span>
@@ -252,6 +255,100 @@
                 <div style="font-size:10px;color:rgba(255,255,255,0.3);letter-spacing:3px;font-weight:700;margin-bottom:12px;">MISIUNI ACTIVE ACUM</div>
                 <div id="ceo-missions-list" style="display:flex;flex-direction:column;gap:8px;">
                     <div style="color:var(--text-muted);font-size:13px;">Se încarcă misiunile...</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SYSTEM CONTROL — Remote Config & Push Update -->
+        <div id="sysctl-section" class="section">
+            <div class="section-header-row">
+                <div>
+                    <div class="section-title">System Control</div>
+                    <div class="section-desc">Remote config · Push updates · Maintenance mode · Versiune live.</div>
+                </div>
+                <div style="display:flex;align-items:center;gap:8px;padding:10px 16px;background:rgba(52,199,89,0.06);border:1px solid rgba(52,199,89,0.2);border-radius:12px;">
+                    <div style="width:7px;height:7px;border-radius:50%;background:#34c759;box-shadow:0 0 6px #34c759;" id="sysctl-live-dot"></div>
+                    <span style="font-size:11px;color:rgba(52,199,89,0.8);font-weight:700;letter-spacing:1px;">SISTEM LIVE</span>
+                </div>
+            </div>
+
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px;">
+
+                <!-- Versiune curentă -->
+                <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:18px;padding:20px;">
+                    <div style="font-size:10px;color:rgba(255,255,255,0.3);letter-spacing:3px;margin-bottom:10px;">VERSIUNE APP</div>
+                    <div style="font-size:32px;font-weight:900;color:#fff;font-family:monospace;" id="sysctl-current-version">—</div>
+                    <div style="font-size:11px;color:rgba(255,255,255,0.25);margin-top:4px;" id="sysctl-version-date">—</div>
+                </div>
+
+                <!-- Maintenance toggle -->
+                <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:18px;padding:20px;">
+                    <div style="font-size:10px;color:rgba(255,255,255,0.3);letter-spacing:3px;margin-bottom:10px;">MAINTENANCE</div>
+                    <div style="display:flex;align-items:center;justify-content:space-between;">
+                        <span style="font-size:13px;color:rgba(255,255,255,0.6);" id="sysctl-maintenance-label">INACTIV</span>
+                        <div onclick="toggleMaintenance()" id="sysctl-maintenance-toggle"
+                            style="width:52px;height:28px;background:rgba(255,255,255,0.1);border-radius:14px;cursor:pointer;position:relative;transition:all 0.3s;border:1px solid rgba(255,255,255,0.1);">
+                            <div id="sysctl-maintenance-knob"
+                                style="position:absolute;top:3px;left:3px;width:20px;height:20px;background:rgba(255,255,255,0.4);border-radius:50%;transition:all 0.3s;"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Push Update card -->
+            <div style="background:linear-gradient(135deg,rgba(10,132,255,0.08),rgba(10,132,255,0.03));border:1px solid rgba(10,132,255,0.2);border-radius:20px;padding:24px;margin-bottom:16px;">
+                <div style="display:flex;align-items:center;gap:10px;margin-bottom:18px;">
+                    <div style="width:36px;height:36px;background:rgba(10,132,255,0.15);border-radius:10px;display:flex;align-items:center;justify-content:center;">
+                        <i class="fas fa-satellite-dish" style="color:#0A84FF;font-size:15px;"></i>
+                    </div>
+                    <div>
+                        <div style="font-size:15px;font-weight:800;color:#fff;">Push Update Live</div>
+                        <div style="font-size:11px;color:rgba(10,132,255,0.6);">Toți Insiderii primesc notificarea instantaneu</div>
+                    </div>
+                </div>
+
+                <div style="margin-bottom:12px;">
+                    <div style="font-size:10px;color:rgba(255,255,255,0.3);letter-spacing:2px;margin-bottom:6px;">MESAJ ACTUALIZARE</div>
+                    <textarea id="sysctl-update-msg"
+                        placeholder="Ex: Am optimizat harta pentru o experiență mai fluidă. Bucurați-vă!"
+                        style="width:100%;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:12px;padding:14px;color:#fff;font-size:13px;font-family:-apple-system,sans-serif;outline:none;resize:none;height:80px;line-height:1.5;"></textarea>
+                </div>
+
+                <div style="display:flex;gap:8px;">
+                    <div style="flex:1;">
+                        <div style="font-size:10px;color:rgba(255,255,255,0.3);letter-spacing:2px;margin-bottom:6px;">TIP ACTUALIZARE</div>
+                        <select id="sysctl-update-type"
+                            style="width:100%;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:12px;color:#fff;font-size:13px;outline:none;min-height:44px;">
+                            <option value="soft" style="background:#0a0a0c;">🔔 Soft — Toast cu refresh opțional</option>
+                            <option value="force" style="background:#0a0a0c;">🔴 Force — Ecran blocat până la refresh</option>
+                            <option value="silent" style="background:#0a0a0c;">🔇 Silent — Reload automat în background</option>
+                        </select>
+                    </div>
+                    <div style="flex:1;">
+                        <div style="font-size:10px;color:rgba(255,255,255,0.3);letter-spacing:2px;margin-bottom:6px;">VERSIUNE NOUĂ</div>
+                        <input id="sysctl-new-version" type="text" placeholder="ex: 1.0.6"
+                            style="width:100%;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:12px;color:#fff;font-size:13px;font-family:monospace;outline:none;min-height:44px;">
+                    </div>
+                </div>
+
+                <button onclick="pushLiveUpdate()" style="
+                    width:100%;margin-top:14px;padding:16px;border:none;border-radius:14px;
+                    background:rgba(10,132,255,0.9);color:#fff;
+                    font-weight:800;font-size:14px;cursor:pointer;min-height:52px;
+                    font-family:-apple-system,sans-serif;letter-spacing:0.5px;
+                    display:flex;align-items:center;justify-content:center;gap:10px;
+                    transition:all 0.2s;
+                ">
+                    <i class="fas fa-satellite-dish"></i>
+                    EMITE ACTUALIZARE LIVE
+                </button>
+            </div>
+
+            <!-- Istoric ultimelor push-uri -->
+            <div style="background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.06);border-radius:16px;padding:20px;">
+                <div style="font-size:10px;color:rgba(255,255,255,0.25);letter-spacing:3px;margin-bottom:14px;">ISTORIC ACTUALIZĂRI</div>
+                <div id="sysctl-update-history" style="display:flex;flex-direction:column;gap:8px;">
+                    <div style="color:var(--text-muted);font-size:12px;">Se încarcă...</div>
                 </div>
             </div>
         </div>
