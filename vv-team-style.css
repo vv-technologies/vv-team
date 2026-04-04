@@ -486,3 +486,163 @@ body {
     overflow-wrap: break-word !important;
     word-break: break-word !important;
 }
+
+
+
+/* ================================================================
+   CEO EXECUTIVE SUITE — STILURI NOI
+   iPhone X Safe Areas + Touch Friendly + Dark Glassmorphism
+   ================================================================ */
+
+/* Logout roșu */
+.logout-btn {
+    color: rgba(255, 59, 48, 0.6) !important;
+    border-top: 1px solid rgba(255, 59, 48, 0.1);
+    margin-top: 8px;
+}
+.logout-btn:hover {
+    color: #ff3b30 !important;
+    background: rgba(255, 59, 48, 0.08) !important;
+}
+
+/* Toate elementele de interacțiune — minim 44px (Apple HIG) */
+button,
+.nav-item,
+.btn-approve,
+.btn-reject,
+.btn-reply,
+.btn-primary,
+.login-btn,
+.btn-delete-all {
+    min-height: 44px !important;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+}
+
+/* Safe area iPhone X pentru sidebar și main */
+.main-content {
+    padding-bottom: calc(40px + env(safe-area-inset-bottom, 0px)) !important;
+}
+
+#login-screen {
+    padding-top: calc(40px + env(safe-area-inset-top, 0px));
+    padding-bottom: calc(40px + env(safe-area-inset-bottom, 0px));
+}
+
+/* Sidebar cu safe area */
+.sidebar {
+    padding-top: calc(30px + env(safe-area-inset-top, 0px));
+}
+
+/* Fotele feedback nu mai taie coloana de suport */
+.vv-table td:nth-child(2) {
+    max-width: 280px;
+    word-break: break-word;
+    overflow-wrap: break-word;
+}
+
+/* Audit log styling */
+#audit-log-body tr:hover td {
+    background: rgba(255, 255, 255, 0.03);
+}
+
+/* Prevent image caching (GDPR) */
+.photo-img {
+    -webkit-user-select: none;
+    user-select: none;
+    pointer-events: auto;
+}
+
+/* Animație slide-up pentru modale */
+@keyframes slideUpModal {
+    from { transform: translateY(100%); opacity: 0; }
+    to   { transform: translateY(0);    opacity: 1; }
+}
+
+/* Foto card buttons mai mari pe mobil */
+@media (max-width: 480px) {
+    .photo-card .btn-approve,
+    .photo-card .btn-reject {
+        padding: 14px !important;
+        font-size: 13px !important;
+    }
+
+    /* Ascunde textul nav pe telefoane mici, lasă doar icon-urile */
+    .nav-item span:not(.nav-badge) { display: none; }
+    .nav-item { justify-content: center; padding: 12px 10px; min-width: 44px; }
+    .sidebar { flex-wrap: wrap; }
+}
+
+/* iPad — sidebar vertical corect */
+@media (min-width: 768px) {
+    .nav-item span:not(.nav-badge) { display: inline; }
+}
+
+/* Money box mai compact pe mobil */
+@media (max-width: 768px) {
+    .system-money-box {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .money-label { margin-bottom: 0; }
+    .money-value { font-size: 14px; }
+}
+
+/* Buton generat cheie — vizibil peste tot */
+.btn-primary {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    justify-content: center;
+    width: 100%;
+}
+
+/* ================================================================
+   CEO EXECUTIVE SUITE — STILURI NOI
+   iPhone X Safe Areas + Touch Friendly (44px min) + Glassmorphism
+   ================================================================ */
+
+/* Logout roșu distinct */
+.logout-btn { color:rgba(255,59,48,0.6) !important; border-top:1px solid rgba(255,59,48,0.08); margin-top:8px; }
+.logout-btn:hover { color:#ff3b30 !important; background:rgba(255,59,48,0.08) !important; }
+
+/* Apple HIG: toate elementele interactive min 44px */
+button, .nav-item, .btn-approve, .btn-reject,
+.btn-reply, .btn-primary, .login-btn, .btn-delete-all {
+    min-height: 44px !important;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+}
+
+/* iPhone X Safe Areas */
+#login-screen {
+    padding-top: calc(40px + env(safe-area-inset-top, 0px));
+    padding-bottom: calc(40px + env(safe-area-inset-bottom, 0px));
+}
+.sidebar { padding-top: calc(30px + env(safe-area-inset-top, 0px)); }
+.main-content { padding-bottom: calc(40px + env(safe-area-inset-bottom, 0px)) !important; }
+
+/* Feedback table — text nu se taie */
+.vv-table td:nth-child(2) { max-width:280px; word-break:break-word; overflow-wrap:break-word; }
+
+/* Audit log row hover */
+#audit-log-body tr:hover td { background:rgba(255,255,255,0.03); }
+
+/* No image caching (GDPR) */
+.photo-img { -webkit-user-select:none; user-select:none; }
+
+/* Money box compact pe mobil */
+@media (max-width:768px) {
+    .system-money-box { display:flex; align-items:center; gap:8px; }
+    .money-label { margin-bottom:0; }
+    .money-value { font-size:14px; }
+    .nav-item span:not(.nav-badge) { display:none; }
+    .nav-item { justify-content:center; padding:12px 10px; min-width:48px; }
+}
+@media (min-width:768px) {
+    .nav-item span:not(.nav-badge) { display:inline; }
+}
+
+/* Btn primar full width */
+.btn-primary { display:flex; align-items:center; gap:8px; justify-content:center; width:100%; }
