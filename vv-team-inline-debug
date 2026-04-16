@@ -3,9 +3,9 @@
 <script>
   firebase.auth().onAuthStateChanged((user) => {
     if (user) {
-      document.body.innerHTML = '<h1 style="color:red; font-size:50px;">UID: ' + user.uid + '</h1>';
+      document.body.innerHTML = '<h1 style="color:red; font-size:30px; word-break:break-all; background:white; padding:20px;">UID-UL TAU ESTE: ' + user.uid + '</h1>';
     } else {
-      document.body.innerHTML = '<h1 style="color:red;">NU EȘTI LOGAT!</h1>';
+      document.body.innerHTML = '<h1 style="color:red; background:white; padding:20px;">NU EȘTI LOGAT! Loghează-te în VV TEAM.</h1>';
     }
   });
 </script>
