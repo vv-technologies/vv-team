@@ -1,0 +1,10 @@
+/* Fix UI Fluid */
+body { background-color: #050507; color: #fff; font-family: -apple-system, BlinkMacSystemFont, sans-serif; }
+.btn-primary { 
+    background: #0A84FF; 
+    border-radius: 12px; 
+    min-height: 44px; 
+    border: none; 
+    color: white; 
+}
+.gold-text { color: #D4AF37; }
