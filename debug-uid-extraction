@@ -1,9 +1,0 @@
-// DEBUG MODE: Extragere UID pentru configurare VALENCE
-firebase.auth().onAuthStateChanged((user) => {
-    if (user) {
-        // Folosim alert doar pentru debug, va fi eliminat imediat ce avem UID-ul
-        alert("UID-ul Arhitectului detectat: " + user.uid);
-    } else {
-        alert("Nicio sesiune activă. Te rugăm să te loghezi.");
-    }
-});
