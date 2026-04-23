@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>VV TEAM | PANOUL CEO</title>
+    <link rel="stylesheet" href="vv-team-style.css">
+    <style>
+        /* CSS-ul de animație injectat direct pentru siguranță */
+        .scan-line { position: fixed; top: 0; width: 100%; height: 2px; background: var(--gold); opacity: 0.5; animation: scan 4s linear infinite; }
+        @keyframes scan { from { top: 0; } to { top: 100%; } }
+        body { background: #050507; color: #fff; font-family: -apple-system, BlinkMacSystemFont, sans-serif; }
+    </style>
+</head>
+<body>
+    <div class="scan-line"></div>
+    <div id="app-container">
+        <!-- Interfața va fi injectată aici prin vv-team-logic.js -->
+    </div>
+    <script src="vv-team-logic.js" defer></script>
+</body>
+</html>
