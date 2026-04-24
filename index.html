@@ -494,7 +494,7 @@ button, .nav-item, .btn-approve, .btn-reject, .btn-reply, .btn-primary, .login-b
 
   <div class="scan-line"></div>
 
-  <div id="login-screen">
+  <div id="login-screen" style="display:flex">
     <div class="logo-box">VV</div>
     <div class="logo-sub">CEO COMMAND CENTER</div>
     <input class="login-input" id="login-email" type="email"
@@ -539,8 +539,15 @@ let lightboxIndex = 0;
 firebase.auth().setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(console.error);
 
 auth.onAuthStateChanged(async (user) => {
+  const loginEl = document.getElementById('login-screen');
   if (!user) {
-    window.location.href = 'index.html';
+    if (loginEl) loginEl.style.display = 'flex';
+    return;
+  }
+  // Utilizator anonim din hub - delogam, afisam login
+  if (user.isAnonymous) {
+    await auth.signOut();
+    if (loginEl) loginEl.style.display = 'flex';
     return;
   }
   try {
@@ -552,11 +559,11 @@ auth.onAuthStateChanged(async (user) => {
       initDashboard();
     } else {
       console.warn('Rol insuficient.');
-      window.location.href = 'index.html';
+      if (document.getElementById('login-screen')) { auth.signOut().then(() => { document.getElementById('login-screen').style.display = 'flex'; }); } else { window.location.href = 'index.html'; }
     }
   } catch (e) {
     console.error('Auth check error:', e);
-    window.location.href = 'index.html';
+    if (document.getElementById('login-screen')) { auth.signOut().then(() => { document.getElementById('login-screen').style.display = 'flex'; }); } else { window.location.href = 'index.html'; }
   }
 });
 
