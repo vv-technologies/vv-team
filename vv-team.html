@@ -1,22 +1,66 @@
 <!DOCTYPE html>
 <html lang="ro">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>VV TEAM | PANOUL CEO</title>
-    <link rel="stylesheet" href="vv-team-style.css">
-    <style>
-        /* CSS-ul de animație injectat direct pentru siguranță */
-        .scan-line { position: fixed; top: 0; width: 100%; height: 2px; background: var(--gold); opacity: 0.5; animation: scan 4s linear infinite; }
-        @keyframes scan { from { top: 0; } to { top: 100%; } }
-        body { background: #050507; color: #fff; font-family: -apple-system, BlinkMacSystemFont, sans-serif; }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#050505">
+  <title>VV TEAM | CEO PANEL</title>
+
+  <!-- CSS -->
+  <link rel="stylesheet" href="vv-team-style.css">
+
+  <!-- Firebase v8 Compat -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+
+  <script>
+    firebase.initializeApp({
+      apiKey: "AIzaSyDGv4kEClO0RHCLvXVLOT-vyPHw6bsxYVc",
+      authDomain: "vv-ep-beta.firebaseapp.com",
+      projectId: "vv-ep-beta",
+      storageBucket: "vv-ep-beta.firebasestorage.app",
+      messagingSenderId: "641117018598",
+      appId: "1:641117018598:web:7cd522ef48db46ad58de27"
+    });
+  </script>
+
+  <style>
+    .scan-line {
+      position: fixed; top: 0; left: 0;
+      width: 100%; height: 2px;
+      background: var(--gold);
+      box-shadow: 0 0 15px var(--gold);
+      animation: scan 4s linear infinite;
+      z-index: 99; opacity: 0.4;
+      pointer-events: none;
+    }
+    @keyframes scan { from { top: 0; } to { top: 100%; } }
+  </style>
 </head>
 <body>
-    <div class="scan-line"></div>
-    <div id="app-container">
-        <!-- Interfața va fi injectată aici prin vv-team-logic.js -->
-    </div>
-    <script src="vv-team-logic.js" defer></script>
+
+  <div class="scan-line"></div>
+
+  <!-- Login screen vizibil înainte de auth -->
+  <div id="login-screen">
+    <div class="logo-box">VV</div>
+    <div class="logo-sub">CEO COMMAND CENTER</div>
+    <input class="login-input" id="login-email" type="email"
+      placeholder="Email CEO" autocomplete="username">
+    <input class="login-input" id="login-pass" type="password"
+      placeholder="Parolă" autocomplete="current-password">
+    <button class="login-btn"
+      onclick="handleLogin(document.getElementById('login-email').value, document.getElementById('login-pass').value)">
+      INTRĂ
+    </button>
+  </div>
+
+  <!-- Dashboard injectat de JS după auth -->
+  <div id="app-container" style="display:none;width:100%;height:100vh;display:flex"></div>
+
+  <!-- Logic -->
+  <script src="vv-team-logic.js" defer></script>
+
 </body>
 </html>
