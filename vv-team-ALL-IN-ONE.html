@@ -540,7 +540,7 @@ firebase.auth().setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(conso
 
 auth.onAuthStateChanged(async (user) => {
   if (!user) {
-    window.location.href = 'login.html';
+    window.location.href = 'index.html';
     return;
   }
   try {
@@ -552,11 +552,11 @@ auth.onAuthStateChanged(async (user) => {
       initDashboard();
     } else {
       console.warn('Rol insuficient.');
-      window.location.href = 'login.html';
+      window.location.href = 'index.html';
     }
   } catch (e) {
     console.error('Auth check error:', e);
-    window.location.href = 'login.html';
+    window.location.href = 'index.html';
   }
 });
 
@@ -571,7 +571,7 @@ async function handleLogin(email, password) {
 }
 
 function handleLogout() {
-  auth.signOut().then(() => window.location.href = 'login.html');
+  auth.signOut().then(() => window.location.href = 'index.html');
 }
 
 // ============================================================
@@ -633,6 +633,9 @@ function buildInterface() {
         <i>🗺</i> <span>Harta Misiuni</span>
       </div>
       <div class="nav-item" onclick="showSection('vvhi')" id="nav-vvhi">
+      <div class="nav-item" onclick="showSection('circle')" id="nav-circle">
+        <i>⬡</i> <span>Inner Circle <span class="nav-badge" id="badge-circle" style="display:none;background:#D4AF37;color:#000;border-radius:10px;padding:1px 6px;font-size:9px;font-weight:800;margin-left:4px">0</span></span>
+      </div>
         <i>🤖</i> <span>VVhi Shadow</span>
       </div>
       <div class="nav-item logout-btn" onclick="handleLogout()">
@@ -1477,6 +1480,189 @@ function showNotif(msg, isError = false) {
   clearTimeout(notif._timer);
   notif._timer = setTimeout(() => { notif.style.opacity = '0'; }, 3000);
 }
-  </script>
+  
+// ================================================================
+// INNER CIRCLE — CEO Panel
+// ================================================================
+var circleCurrentTab = 'pending';
+
+function switchCircleTab(tab) {
+  circleCurrentTab = tab;
+  var btnP = document.getElementById('circle-tab-pending');
+  var btnA = document.getElementById('circle-tab-active');
+  var listP = document.getElementById('circle-pending-list');
+  var listA = document.getElementById('circle-active-list');
+  if (tab === 'pending') {
+    if(btnP){btnP.style.background='#fff';btnP.style.color='#000';}
+    if(btnA){btnA.style.background='transparent';btnA.style.color='rgba(255,255,255,0.4)';}
+    if(listP) listP.style.display = 'block';
+    if(listA) listA.style.display = 'none';
+    loadCirclePending();
+  } else {
+    if(btnA){btnA.style.background='#fff';btnA.style.color='#000';}
+    if(btnP){btnP.style.background='transparent';btnP.style.color='rgba(255,255,255,0.4)';}
+    if(listP) listP.style.display = 'none';
+    if(listA) listA.style.display = 'block';
+    loadCircleActive();
+  }
+}
+
+function generateVVCoreId() {
+  var chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  var p1 = '', p2 = '';
+  for(var i=0;i<4;i++) p1 += chars[Math.floor(Math.random()*chars.length)];
+  for(var i=0;i<2;i++) p2 += chars[Math.floor(Math.random()*chars.length)];
+  return 'VV·CORE·' + p1 + '-' + p2;
+}
+
+function loadCirclePending() {
+  var list = document.getElementById('circle-pending-list');
+  if(!list) return;
+  list.innerHTML = '<div style="text-align:center;padding:20px;color:rgba(255,255,255,0.3);font-size:13px">Se încarcă...</div>';
+  db.collection('contributors').where('status','==','pending')
+    .orderBy('submittedAt','desc')
+    .onSnapshot(function(snap) {
+      var badge = document.getElementById('badge-circle');
+      if(badge) { badge.textContent = snap.size; badge.style.display = snap.size > 0 ? 'inline' : 'none'; }
+      var stats = document.getElementById('circle-stats');
+      if(stats) stats.textContent = snap.size + ' pending';
+      if(snap.empty) {
+        list.innerHTML = '<div style="text-align:center;padding:30px;color:rgba(255,255,255,0.25);font-size:13px">Nicio cerere în așteptare. 🎉</div>';
+        return;
+      }
+      list.innerHTML = '';
+      snap.forEach(function(doc) {
+        var d = doc.data();
+        var card = document.createElement('div');
+        card.style.cssText = 'background:rgba(212,175,55,0.05);border:1px solid rgba(212,175,55,0.15);border-radius:16px;padding:16px;margin-bottom:12px;';
+        var dateStr = d.submittedAt ? d.submittedAt.toDate().toLocaleString('ro-RO') : '—';
+        card.innerHTML = '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px">'
+          + '<div>'
+          + '<div style="font-size:15px;font-weight:800;color:#fff;margin-bottom:3px">' + (d.alias || 'INSIDER') + '</div>'
+          + '<div style="font-size:10px;color:rgba(255,255,255,0.3);font-family:monospace">' + doc.id.substring(0,16) + '...</div>'
+          + '</div>'
+          + '<div style="font-size:10px;color:rgba(212,175,55,0.6);text-align:right">'
+          + '<div style="font-weight:700;letter-spacing:.05em">⏳ PENDING</div>'
+          + '<div style="margin-top:2px;color:rgba(255,255,255,0.25)">' + dateStr + '</div>'
+          + '</div>'
+          + '</div>'
+          + '<div style="display:flex;gap:8px">'
+          + '<button onclick="deployCircleId('' + doc.id + '','' + (d.alias||'INSIDER').replace(/'/g,"\'") + '')" style="flex:1;padding:12px;background:rgba(212,175,55,0.15);border:1px solid rgba(212,175,55,0.35);border-radius:10px;color:#D4AF37;font-weight:800;font-size:12px;cursor:pointer;min-height:44px;font-family:inherit">⬡ VERIFY & DEPLOY IDENTITY</button>'
+          + '<button onclick="rejectCircle('' + doc.id + '')" style="padding:12px 14px;background:rgba(255,59,48,0.08);border:1px solid rgba(255,59,48,0.2);border-radius:10px;color:#ff3b30;font-weight:700;font-size:12px;cursor:pointer;min-height:44px;font-family:inherit">✕</button>'
+          + '</div>';
+        list.appendChild(card);
+      });
+    }, function(err) {
+      list.innerHTML = '<div style="color:#ff3b30;padding:16px;font-size:12px">Eroare: ' + err.message + '</div>';
+    });
+}
+
+function loadCircleActive() {
+  var list = document.getElementById('circle-active-list');
+  if(!list) return;
+  db.collection('contributors').where('status','==','active')
+    .orderBy('activatedAt','desc')
+    .onSnapshot(function(snap) {
+      var stats = document.getElementById('circle-stats');
+      if(stats) stats.textContent = snap.size + ' activi / 100';
+      if(snap.empty) {
+        list.innerHTML = '<div style="text-align:center;padding:30px;color:rgba(255,255,255,0.25);font-size:13px">Niciun contributor activ încă.</div>';
+        return;
+      }
+      list.innerHTML = '';
+      snap.forEach(function(doc) {
+        var d = doc.data();
+        var dateStr = d.activatedAt ? d.activatedAt.toDate().toLocaleDateString('ro-RO') : '—';
+        var isOnline = d.lastActive && (d.lastActive.toDate() > new Date(Date.now()-5*60*1000));
+        var card = document.createElement('div');
+        card.style.cssText = 'background:rgba(52,199,89,0.04);border:1px solid rgba(52,199,89,0.12);border-radius:14px;padding:14px 16px;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;';
+        card.innerHTML = '<div style="display:flex;align-items:center;gap:10px">'
+          + '<div style="width:8px;height:8px;border-radius:50%;background:' + (isOnline ? '#34c759;box-shadow:0 0 6px rgba(52,199,89,0.5)' : 'rgba(255,255,255,0.2)') + '"></div>'
+          + '<div>'
+          + '<div style="font-size:13px;font-weight:700;color:#fff">' + (d.alias||'INSIDER') + '</div>'
+          + '<div style="font-size:11px;font-family:monospace;color:#D4AF37;margin-top:2px">' + (d.vvCoreId||'—') + '</div>'
+          + '</div>'
+          + '</div>'
+          + '<div style="text-align:right">'
+          + '<div style="font-size:10px;color:rgba(52,199,89,0.6);font-weight:700">ACTIV</div>'
+          + '<div style="font-size:10px;color:rgba(255,255,255,0.25);margin-top:2px">' + dateStr + '</div>'
+          + '</div>';
+        list.appendChild(card);
+      });
+    });
+}
+
+async function deployCircleId(uid, alias) {
+  if(!confirm('Ai verificat plata de 29 lei de la ' + alias + ' în Salt Bank?\n\nApasă OK pentru a activa identitatea VV·CORE.')) return;
+  var btn = event.target;
+  btn.textContent = 'SE DEPLOYEAZĂ...';
+  btn.style.opacity = '0.6';
+  btn.style.pointerEvents = 'none';
+  try {
+    // Generează ID unic
+    var newId = generateVVCoreId();
+    // Verifică unicitatea
+    var existing = await db.collection('contributors').where('vvCoreId','==',newId).get();
+    if(!existing.empty) newId = generateVVCoreId(); // retry o dată
+
+    await db.collection('contributors').doc(uid).update({
+      status: 'active',
+      vvCoreId: newId,
+      activatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+      activatedBy: 'CEO'
+    });
+
+    // Trimite notificare în inbox utilizatorului
+    await db.collection('inbox').add({
+      to: uid,
+      type: 'circle_activated',
+      message: '⬡ Identitatea ta VV·CORE a fost activată: ' + newId + '. Bine ai venit în nucleul Universului VV.',
+      vvCoreId: newId,
+      read: false,
+      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+
+    // Log VVhi
+    db.collection('vvhi_dataset').add({
+      action: 'CIRCLE_DEPLOY',
+      context: { uid: uid, alias: alias, vvCoreId: newId },
+      timestamp: firebase.firestore.FieldValue.serverTimestamp()
+    }).catch(function(){});
+
+    showNotification('✅ ' + newId + ' deploiat pentru ' + alias + '!', 'success');
+  } catch(e) {
+    showNotification('Eroare: ' + e.message, 'error');
+    btn.textContent = '⬡ VERIFY & DEPLOY IDENTITY';
+    btn.style.opacity = '1';
+    btn.style.pointerEvents = 'auto';
+  }
+}
+
+async function rejectCircle(uid) {
+  if(!confirm('Respingi această cerere? Banii NU se returnează automat — fă-o manual din Salt Bank.')) return;
+  await db.collection('contributors').doc(uid).update({
+    status: 'rejected',
+    rejectedAt: firebase.firestore.FieldValue.serverTimestamp()
+  });
+  db.collection('inbox').add({
+    to: uid,
+    type: 'circle_rejected',
+    message: 'Cererea ta pentru VV Inner Circle nu a putut fi verificată. Contactează VV Team pentru detalii.',
+    read: false,
+    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+  });
+  showNotification('Cerere respinsă.', 'error');
+}
+
+// Încarcă Inner Circle când se deschide secțiunea
+var _origShowSection = showSection;
+showSection = function(name) {
+  _origShowSection(name);
+  if(name === 'circle') {
+    switchCircleTab('pending');
+  }
+};
+
+</script>
 </body>
 </html>
