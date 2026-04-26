@@ -31,7 +31,7 @@ firebase.initializeApp({
   <input class="login-input" id="login-email" type="email" placeholder="Email CEO" autocomplete="username">
   <input class="login-input" id="login-pass" type="password" placeholder="Parolă" autocomplete="current-password"
     onkeydown="if(event.key==='Enter') handleLogin(document.getElementById('login-email').value, document.getElementById('login-pass').value)">
-  <button class="login-btn" onclick="handleLogin(document.getElementById('login-email').value, document.getElementById('login-pass').value)">INTRĂ</button>
+  <button class="login-btn" ontouchend="handleLogin(document.getElementById('login-email').value, document.getElementById('login-pass').value)" onclick="handleLogin(document.getElementById('login-email').value, document.getElementById('login-pass').value)">INTRĂ</button>
 </div>
 
 <!-- APP SHELL -->
