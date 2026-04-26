@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>VV DEBUG</title>
+
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+
+  <script>
+    firebase.initializeApp({
+      apiKey: "AIzaSyDGv4kEClO0RHCLvXVLOT-vyPHw6bsxYVc",
+      authDomain: "vv-ep-beta.firebaseapp.com",
+      projectId: "vv-ep-beta",
+      storageBucket: "vv-ep-beta.firebasestorage.app",
+      messagingSenderId: "641117018598",
+      appId: "1:641117018598:web:7cd522ef48db46ad58de27"
+    });
+  </script>
+
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; font-family: -apple-system, sans-serif; }
+    body { background: #050505; color: #fff; min-height: 100vh; padding: 30px 20px; }
+
+    .log-box {
+      background: #0a0a0c;
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 12px;
+      padding: 16px;
+      margin-bottom: 12px;
+      font-size: 13px;
+      line-height: 1.6;
+    }
+    .log-box.ok    { border-color: rgba(52,199,89,0.5);  }
+    .log-box.err   { border-color: rgba(255,59,48,0.5);  }
+    .log-box.warn  { border-color: rgba(255,149,0,0.5);  }
+    .log-box.info  { border-color: rgba(10,132,255,0.5); }
+
+    .label { font-size: 10px; text-transform: uppercase; letter-spacing: 1px; opacity: 0.5; margin-bottom: 4px; }
+    .value { font-weight: 700; word-break: break-all; }
+    .ok   .label { color: #34c759; }
+    .err  .label { color: #ff3b30; }
+    .warn .label { color: #ff9500; }
+    .info .label { color: #0A84FF; }
+
+    h1 { font-size: 20px; font-weight: 900; letter-spacing: 3px; margin-bottom: 6px; }
+    .sub { font-size: 11px; color: rgba(255,255,255,0.3); margin-bottom: 24px; letter-spacing: 2px; }
+
+    #login-box {
+      background: #0a0a0c;
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 16px;
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+    input {
+      width: 100%;
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.15);
+      border-radius: 10px;
+      padding: 14px 16px;
+      color: #fff;
+      font-size: 15px;
+      margin-bottom: 10px;
+      outline: none;
+      -webkit-appearance: none;
+    }
+    /* Safari iOS autofill fix */
+    input:-webkit-autofill { -webkit-box-shadow: 0 0 0 100px #0a0a0c inset !important; -webkit-text-fill-color: #fff !important; }
+    button {
+      width: 100%;
+      background: #fff;
+      color: #000;
+      border: none;
+      border-radius: 10px;
+      padding: 14px;
+      font-size: 15px;
+      font-weight: 800;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+    }
+    #status-area { margin-top: 20px; }
+  </style>
+</head>
+<body>
+
+  <h1>VV DEBUG</h1>
+  <div class="sub">iOS 16.7 — DIAGNOSTIC PANEL</div>
+
+  <div id="login-box">
+    <div class="label" style="margin-bottom:10px;color:#0A84FF">LOGIN TEST</div>
+    <input type="email" id="em" placeholder="email CEO" autocomplete="username">
+    <input type="password" id="pw" placeholder="parolă" autocomplete="current-password">
+    <button onclick="testLogin()">TESTEAZĂ LOGIN</button>
+  </div>
+
+  <div id="status-area">
+    <div class="log-box info">
+      <div class="label">Status inițial</div>
+      <div class="value">Se verifică Firebase...</div>
+    </div>
+  </div>
+
+<script>
+  const db   = firebase.firestore();
+  const auth = firebase.auth();
+
+  function log(label, value, type) {
+    var area = document.getElementById('status-area');
+    var box  = document.createElement('div');
+    box.className = 'log-box ' + (type || 'info');
+    box.innerHTML  = '<div class="label">' + label + '</div><div class="value">' + value + '</div>';
+    area.appendChild(box);
+    // scroll jos
+    window.scrollTo(0, document.body.scrollHeight);
+  }
+
+  // ── STEP 1: Firebase init ──
+  try {
+    log('Firebase App', firebase.app().name + ' ✓', 'ok');
+  } catch(e) {
+    log('Firebase App ERROR', e.message, 'err');
+  }
+
+  // ── STEP 2: Auth state ──
+  log('Auth listener', 'Pornit — aștept răspuns...', 'info');
+
+  auth.onAuthStateChanged(function(user) {
+    if (user) {
+      log('Auth state', '✓ User detectat: ' + user.email, 'ok');
+      log('User UID', user.uid, 'ok');
+      checkFirestore(user.uid);
+    } else {
+      log('Auth state', 'Niciun user logat — introdu credențialele sus', 'warn');
+    }
+  }, function(err) {
+    log('Auth state ERROR', err.message, 'err');
+  });
+
+  // ── STEP 3: Firestore read ──
+  async function checkFirestore(uid) {
+    log('Firestore', 'Citesc users/' + uid + '...', 'info');
+    try {
+      var doc = await db.collection('users').doc(uid).get();
+      if (doc.exists) {
+        var d = doc.data();
+        log('Firestore users doc', '✓ Găsit', 'ok');
+        log('role', d.role || '(câmpul role lipsește!)', d.role === 'ceo' ? 'ok' : 'err');
+        if (d.role !== 'ceo') {
+          log('PROBLEMĂ', 'role este "' + d.role + '" nu "ceo" — panoul nu se va deschide!', 'err');
+        } else {
+          log('Concluzie', '✓ Totul OK — codul ar trebui să funcționeze', 'ok');
+          log('Acțiune', 'Revino la pagina principală și încearcă din nou', 'info');
+        }
+      } else {
+        log('Firestore users doc', 'DOCUMENTUL NU EXISTĂ pentru uid: ' + uid, 'err');
+        log('PROBLEMĂ', 'Nu există doc în users/' + uid + ' — creează-l în Firebase Console cu role: "ceo"', 'err');
+      }
+    } catch(e) {
+      log('Firestore ERROR', e.message, 'err');
+      log('Posibil motiv', 'Firestore Rules blochează citirea — verifică în Firebase Console > Firestore > Rules', 'warn');
+    }
+
+    // ── STEP 4: contributors collection ──
+    log('Firestore contributors', 'Testez accesul la colecția contributors...', 'info');
+    try {
+      var snap = await db.collection('contributors').limit(1).get();
+      log('contributors access', '✓ OK — ' + snap.size + ' doc(e) găsite', 'ok');
+    } catch(e) {
+      log('contributors ERROR', e.message, 'err');
+      log('PROBLEMĂ Inner Circle', 'Rules blochează contributors — Inner Circle nu va funcționa', 'warn');
+    }
+  }
+
+  // ── LOGIN TEST ──
+  async function testLogin() {
+    var email = document.getElementById('em').value;
+    var pass  = document.getElementById('pw').value;
+    if (!email || !pass) { log('Login', 'Completează email și parolă', 'warn'); return; }
+    log('Login attempt', 'Se încearcă: ' + email + '...', 'info');
+    try {
+      await auth.signInWithEmailAndPassword(email, pass);
+      log('Login', '✓ Autentificat cu succes!', 'ok');
+    } catch(e) {
+      log('Login ERROR', e.code + ': ' + e.message, 'err');
+      if (e.code === 'auth/user-not-found')    log('Hint', 'Email-ul nu există în Firebase Auth', 'warn');
+      if (e.code === 'auth/wrong-password')    log('Hint', 'Parola incorectă', 'warn');
+      if (e.code === 'auth/network-request-failed') log('Hint', 'Problemă de rețea — verifică conexiunea', 'warn');
+      if (e.code === 'auth/too-many-requests') log('Hint', 'Prea multe încercări — așteaptă câteva minute', 'warn');
+    }
+  }
+
+  // ── iOS / Browser info ──
+  log('User Agent', navigator.userAgent, 'info');
+  log('iOS check', /iphone|ipad|ipod/i.test(navigator.userAgent) ? '✓ iOS detectat' : 'Nu e iOS', 'info');
+  log('Online', navigator.onLine ? '✓ Conexiune activă' : '✗ Offline!', navigator.onLine ? 'ok' : 'err');
+</script>
+</body>
+</html>
