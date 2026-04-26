@@ -1,384 +1,77 @@
-// ============================================================
-// VV-TEAM.js — CEO Central Intelligence Panel
-// Arhitectură: Vanilla JS + Firebase v8 (compat)
-// Colecții: users, missions, contracts, transactions,
-//           talent_pool, audit_log, config, feedback,
-//           pulse_events, vvhi_dataset
-// ============================================================
+// VV TEAM CEO Panel — Logic complet
+// Firebase e initializat in index.html
 
-const db = firebase.firestore();
+const db  = firebase.firestore();
 const auth = firebase.auth();
+const COIN_DEFAULT = 10;
+const RANKS = ['Neofit','Explorer','Trainer','Master','Fondator'];
 
-// ── CONSTANTE ──
-const COIN_REWARD_DEFAULT = 10;
-const RANKS = ['Neofit', 'Explorer', 'Trainer', 'Master', 'Fondator'];
-
-// ── STARE GLOBALĂ ──
 let currentCEO = null;
 let currentSection = 'missions';
-let lightboxImages = [];
-let lightboxIndex = 0;
+let _pendingUnsub = null;
+let _activeUnsub  = null;
+let ceoMapInstance = null;
 
-// ============================================================
-// 1. AUTENTIFICARE & AUTH GUARD
-// ============================================================
+// ── SIDEBAR TOGGLE ──
+function toggleSidebar() {
+  const sb = document.getElementById('sidebar');
+  const mc = document.getElementById('main-content');
+  sb.classList.toggle('open');
+  mc.classList.toggle('shifted');
+}
 
+// ── AUTH ──
 firebase.auth().setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(console.error);
 
 auth.onAuthStateChanged(async (user) => {
-  if (!user) {
-    window.location.href = 'login.html';
-    return;
-  }
+  if (!user) { showLogin(); return; }
   try {
-    const userDoc = await db.collection('users').doc(user.uid).get();
-    if (userDoc.exists && userDoc.data().role === 'ceo') {
-      currentCEO = { uid: user.uid, ...userDoc.data() };
-      console.log('VV CEO Panel: Acces autorizat.');
-      buildInterface();
+    const doc = await db.collection('users').doc(user.uid).get();
+    if (doc.exists && doc.data().role === 'ceo') {
+      currentCEO = { uid: user.uid, ...doc.data() };
+      hideLogin();
       initDashboard();
-    } else {
-      console.warn('Rol insuficient.');
-      window.location.href = 'login.html';
-    }
-  } catch (e) {
-    console.error('Auth check error:', e);
-    window.location.href = 'login.html';
-  }
+    } else { showLogin(); }
+  } catch(e) { console.error(e); showLogin(); }
 });
 
+function showLogin() { document.getElementById('login-screen').classList.remove('hidden'); }
+function hideLogin() { document.getElementById('login-screen').classList.add('hidden'); }
+
 async function handleLogin(email, password) {
+  const btn = document.querySelector('.login-btn');
+  if (btn) { btn.textContent = 'SE VERIFICĂ...'; btn.disabled = true; }
   try {
     await auth.signInWithEmailAndPassword(email, password);
-  } catch (error) {
-    console.error('Login error:', error.message);
-    const btn = document.querySelector('.login-btn');
-    if (btn) { btn.textContent = 'ACCES REFUZAT'; setTimeout(() => btn.textContent = 'INTRĂ', 2000); }
+  } catch(e) {
+    if (btn) { btn.textContent = 'ACCES REFUZAT'; btn.disabled = false; setTimeout(() => btn.textContent = 'INTRĂ', 2000); }
   }
 }
 
 function handleLogout() {
-  auth.signOut().then(() => window.location.href = 'login.html');
+  if (_pendingUnsub) { _pendingUnsub(); _pendingUnsub = null; }
+  if (_activeUnsub)  { _activeUnsub();  _activeUnsub  = null; }
+  auth.signOut().then(() => location.reload());
 }
 
-// ============================================================
-// 2. CONSTRUIRE INTERFAȚĂ (injectare HTML în #app-container)
-// ============================================================
-
-function buildInterface() {
-  const app = document.getElementById('app-container');
-  if (!app) return;
-
-  app.innerHTML = `
-    <!-- LOGIN SCREEN -->
-    <div id="login-screen" style="display:none">
-      <div class="logo-box">VV</div>
-      <div class="logo-sub">CEO COMMAND CENTER</div>
-      <input class="login-input" id="login-email" type="email" placeholder="Email CEO" autocomplete="username">
-      <input class="login-input" id="login-pass" type="password" placeholder="Parolă" autocomplete="current-password">
-      <button class="login-btn" onclick="handleLogin(document.getElementById('login-email').value, document.getElementById('login-pass').value)">INTRĂ</button>
-    </div>
-
-    <!-- SIDEBAR -->
-    <div class="sidebar" id="sidebar">
-      <div class="sidebar-header">
-        <div class="sidebar-title">VV TEAM</div>
-        <div class="sidebar-subtitle">CEO PANEL</div>
-      </div>
-      <div class="system-money-box">
-        <div class="money-label">VV Coins în sistem</div>
-        <div class="money-value" id="total-coins">— VVC</div>
-      </div>
-      <div class="nav-item active" onclick="showSection('missions')" id="nav-missions">
-        <i>🎯</i> <span>Misiuni</span>
-        <span class="nav-badge" id="badge-missions"></span>
-      </div>
-      <div class="nav-item" onclick="showSection('contracts')" id="nav-contracts">
-        <i>📋</i> <span>Contracte</span>
-        <span class="nav-badge" id="badge-contracts"></span>
-      </div>
-      <div class="nav-item" onclick="showSection('feedback')" id="nav-feedback">
-        <i>💬</i> <span>Feedback</span>
-        <span class="nav-badge" id="badge-feedback"></span>
-      </div>
-      <div class="nav-item" onclick="showSection('talent')" id="nav-talent">
-        <i>👥</i> <span>Talent Pool</span>
-      </div>
-      <div class="nav-item" onclick="showSection('leaderboard')" id="nav-leaderboard">
-        <i>🏆</i> <span>Leaderboard</span>
-      </div>
-      <div class="nav-item" onclick="showSection('keys')" id="nav-keys">
-        <i>🔑</i> <span>Chei Beta</span>
-      </div>
-      <div class="nav-item" onclick="showSection('config')" id="nav-config">
-        <i>⚙️</i> <span>Config Live</span>
-      </div>
-      <div class="nav-item" onclick="showSection('audit')" id="nav-audit">
-        <i>📜</i> <span>Audit Log</span>
-      </div>
-      <div class="nav-item" onclick="showSection('map')" id="nav-map">
-        <i>🗺</i> <span>Harta Misiuni</span>
-      </div>
-      <div class="nav-item" onclick="showSection('vvhi')" id="nav-vvhi">
-        <i>🤖</i> <span>VVhi Shadow</span>
-      </div>
-      <div class="nav-item logout-btn" onclick="handleLogout()">
-        <i>🚪</i> <span>Deconectare</span>
-      </div>
-    </div>
-
-    <!-- MAIN CONTENT -->
-    <div class="main-content" id="main-content">
-
-      <!-- MISIUNI -->
-      <div class="section active" id="section-missions">
-        <div class="section-header-row">
-          <div>
-            <div class="section-title">Galerie Misiuni</div>
-            <div class="section-desc">Validează misiunile trimise de Insideri. Aprobare = VV Coins automat.</div>
-          </div>
-          <button class="btn-delete-all" onclick="deleteAllRejected()">🗑 Șterge respinse</button>
-        </div>
-        <div id="missions-tabs" style="display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap">
-          <button class="btn-tab active" onclick="loadMissions('pending')" id="tab-pending">⏳ În așteptare</button>
-          <button class="btn-tab" onclick="loadMissions('approved')" id="tab-approved">✅ Aprobate</button>
-          <button class="btn-tab" onclick="loadMissions('rejected')" id="tab-rejected">❌ Respinse</button>
-        </div>
-        <div class="grid-container" id="missions-grid">
-          <div style="color:var(--text-muted);padding:20px">Se încarcă misiunile...</div>
-        </div>
-      </div>
-
-      <!-- CONTRACTE -->
-      <div class="section" id="section-contracts">
-        <div class="section-header-row">
-          <div>
-            <div class="section-title">Contracte Active</div>
-            <div class="section-desc">Gestionează contractele lansate de utilizatori.</div>
-          </div>
-        </div>
-        <div id="contracts-list">
-          <div style="color:var(--text-muted);padding:20px">Se încarcă contractele...</div>
-        </div>
-      </div>
-
-      <!-- FEEDBACK -->
-      <div class="section" id="section-feedback">
-        <div class="section-header-row">
-          <div>
-            <div class="section-title">Feedback & Suport</div>
-            <div class="section-desc">Bug reports și mesaje de la utilizatori.</div>
-          </div>
-          <button class="btn-delete-all" onclick="deleteAllFeedback()">🗑 Șterge rezolvate</button>
-        </div>
-        <div id="feedback-list">
-          <div style="color:var(--text-muted);padding:20px">Se încarcă feedback-ul...</div>
-        </div>
-      </div>
-
-      <!-- TALENT POOL -->
-      <div class="section" id="section-talent">
-        <div class="section-header-row">
-          <div>
-            <div class="section-title">Talent Pool</div>
-            <div class="section-desc">Gestionează rangurile utilizatorilor în ecosistem.</div>
-          </div>
-        </div>
-        <div id="talent-list">
-          <div style="color:var(--text-muted);padding:20px">Se încarcă talent pool-ul...</div>
-        </div>
-      </div>
-
-      <!-- LEADERBOARD -->
-      <div class="section" id="section-leaderboard">
-        <div class="section-header-row">
-          <div>
-            <div class="section-title">Leaderboard VV Onyx</div>
-            <div class="section-desc">Top utilizatori după VV Coins acumulate.</div>
-          </div>
-        </div>
-        <table class="vv-table">
-          <thead>
-            <tr>
-              <th>#</th><th>Utilizator</th><th>Rang</th><th>VV Coins</th><th>Misiuni</th>
-            </tr>
-          </thead>
-          <tbody id="leaderboard-body">
-            <tr><td colspan="5" style="color:var(--text-muted);text-align:center;padding:20px">Se încarcă...</td></tr>
-          </tbody>
-        </table>
-      </div>
-
-      <!-- CHEI BETA -->
-      <div class="section" id="section-keys">
-        <div class="section-header-row">
-          <div>
-            <div class="section-title">Chei Beta</div>
-            <div class="section-desc">Generează și gestionează cheile de acces VV Beta.</div>
-          </div>
-        </div>
-        <div class="key-generator-card">
-          <div style="font-size:13px;color:var(--text-muted);margin-bottom:15px">Generează o nouă cheie de acces unică pentru un utilizator.</div>
-          <button class="btn-primary" onclick="generateKey()">🔑 Generează cheie nouă</button>
-          <div id="keys-list"></div>
-        </div>
-      </div>
-
-      <!-- CONFIG LIVE -->
-      <div class="section" id="section-config">
-        <div class="section-header-row">
-          <div>
-            <div class="section-title">Config Live</div>
-            <div class="section-desc">Modifică setările ecosistemului în timp real.</div>
-          </div>
-        </div>
-        <div id="config-panel" style="display:flex;flex-direction:column;gap:15px;max-width:500px">
-          <div class="key-generator-card">
-            <div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:10px">Kill Switch</div>
-            <div style="display:flex;gap:10px">
-              <button class="btn-approve" onclick="setKillSwitch(true)">🟢 Activează Site</button>
-              <button class="btn-reject" onclick="setKillSwitch(false)">🔴 Pune în Mentenanță</button>
-            </div>
-          </div>
-          <div class="key-generator-card">
-            <div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:10px">Valoare VV Coin per misiune</div>
-            <div style="display:flex;gap:10px;align-items:center">
-              <input id="coin-value-input" type="number" value="10" min="1" max="100" style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);padding:10px 15px;border-radius:8px;color:#fff;font-size:16px;width:100px;outline:none">
-              <button class="btn-approve" onclick="updateCoinValue()">Salvează</button>
-            </div>
-          </div>
-          <div class="key-generator-card">
-            <div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:10px">Mesajul zilei (afișat în hub)</div>
-            <textarea id="daily-message-input" style="width:100%;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);padding:10px 15px;border-radius:8px;color:#fff;font-size:14px;outline:none;resize:none;min-height:80px" placeholder="Scrie mesajul zilei..."></textarea>
-            <button class="btn-approve" style="margin-top:10px;width:100%" onclick="updateDailyMessage()">Publică mesajul</button>
-          </div>
-        </div>
-      </div>
-
-      <!-- AUDIT LOG -->
-      <div class="section" id="section-audit">
-        <div class="section-header-row">
-          <div>
-            <div class="section-title">Audit Log</div>
-            <div class="section-desc">Toate acțiunile tale înregistrate pentru securitate.</div>
-          </div>
-        </div>
-        <table class="vv-table">
-          <thead>
-            <tr><th>Acțiune</th><th>Detalii</th><th>Data</th></tr>
-          </thead>
-          <tbody id="audit-log-body">
-            <tr><td colspan="3" style="color:var(--text-muted);text-align:center;padding:20px">Se încarcă log-ul...</td></tr>
-          </tbody>
-        </table>
-      </div>
-
-      <!-- HARTA MISIUNI -->
-      <div class="section" id="section-map">
-        <div class="section-header-row">
-          <div>
-            <div class="section-title">Harta Misiuni</div>
-            <div class="section-desc">Vizualizare geografică a activității din ecosistem.</div>
-          </div>
-        </div>
-        <div id="ceo-map" style="width:100%;height:500px;border-radius:16px;border:1px solid var(--glass-border)"></div>
-      </div>
-
-      <!-- VVHI SHADOW MODE -->
-      <div class="section" id="section-vvhi">
-        <div class="section-header-row">
-          <div>
-            <div class="section-title">VVhi Shadow Mode</div>
-            <div class="section-desc">Dataset-ul tău de decizii CEO — antrenează AI-ul viitor.</div>
-          </div>
-        </div>
-        <div id="vvhi-stats" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:15px;margin-bottom:25px"></div>
-        <table class="vv-table">
-          <thead>
-            <tr><th>Acțiune</th><th>Context</th><th>Decizie</th><th>Data</th></tr>
-          </thead>
-          <tbody id="vvhi-body">
-            <tr><td colspan="4" style="color:var(--text-muted);text-align:center;padding:20px">Se încarcă dataset-ul VVhi...</td></tr>
-          </tbody>
-        </table>
-      </div>
-
-    </div><!-- end main-content -->
-
-    <!-- LIGHTBOX -->
-    <div id="lightbox" onclick="closeLightbox()">
-      <span class="lb-close">✕</span>
-      <span class="lb-nav lb-prev" onclick="event.stopPropagation();lightboxNav(-1)">‹</span>
-      <img id="lb-img" src="" alt="">
-      <span class="lb-nav lb-next" onclick="event.stopPropagation();lightboxNav(1)">›</span>
-    </div>
-  `;
-
-  // Inject tab styles
-  const style = document.createElement('style');
-  style.textContent = `
-    .btn-tab{background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);color:var(--text-muted);padding:8px 16px;border-radius:8px;cursor:pointer;font-size:12px;font-weight:600;font-family:inherit;transition:0.2s}
-    .btn-tab.active{background:rgba(10,132,255,0.15);border-color:rgba(10,132,255,0.4);color:var(--vv-blue)}
-    .btn-tab:hover{color:#fff}
-    .contract-card{background:var(--glass-bg);border:1px solid var(--glass-border);border-radius:12px;padding:18px;margin-bottom:12px}
-    .feedback-card{background:var(--glass-bg);border:1px solid var(--glass-border);border-radius:12px;padding:18px;margin-bottom:12px}
-    .feedback-card.bug{border-color:rgba(255,59,48,0.2)}
-    .talent-card{background:var(--glass-bg);border:1px solid var(--glass-border);border-radius:12px;padding:16px;margin-bottom:10px;display:flex;align-items:center;gap:15px;flex-wrap:wrap}
-    .rank-select{background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);color:#fff;padding:8px 12px;border-radius:8px;font-size:12px;outline:none;cursor:pointer}
-    .vvhi-stat-card{background:var(--glass-bg);border:1px solid var(--glass-border);border-radius:12px;padding:18px;text-align:center}
-    .vvhi-stat-val{font-size:28px;font-weight:800;color:var(--gold)}
-    .vvhi-stat-lbl{font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px;margin-top:5px}
-  `;
-  document.head.appendChild(style);
-}
-
-// ============================================================
-// 3. NAVIGARE SECȚIUNI
-// ============================================================
-
-function showSection(name) {
-  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
-  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-  const sec = document.getElementById('section-' + name);
-  const nav = document.getElementById('nav-' + name);
-  if (sec) sec.classList.add('active');
-  if (nav) nav.classList.add('active');
-  currentSection = name;
-
-  // Lazy load per sezione
-  if (name === 'missions') loadMissions('pending');
-  if (name === 'contracts') loadContracts();
-  if (name === 'feedback') loadFeedback();
-  if (name === 'talent') loadTalentPool();
-  if (name === 'leaderboard') loadLeaderboard();
-  if (name === 'keys') loadKeys();
-  if (name === 'audit') loadAuditLog();
-  if (name === 'map') initCEOMap();
-  if (name === 'vvhi') loadVVhi();
-  if (name === 'config') loadConfig();
-
-  logCEOAction('NAV', 'Navigat la secțiunea: ' + name);
-}
-
-// ============================================================
-// 4. INIT DASHBOARD
-// ============================================================
-
+// ── DASHBOARD ──
 async function initDashboard() {
-  loadMissions('pending');
-  loadBadgeCounts();
-  loadTotalCoins();
+  showSection('missions');
+  loadBadges();
+  loadCoins();
 }
 
-async function loadBadgeCounts() {
+async function loadBadges() {
   try {
-    const pending = await db.collection('missions').where('status', '==', 'pending').get();
-    const contracts = await db.collection('contracts').where('status', '==', 'pending').get();
-    const feedback = await db.collection('feedback').where('status', '==', 'nou').get();
-    setBadge('missions', pending.size);
-    setBadge('contracts', contracts.size);
-    setBadge('feedback', feedback.size);
-  } catch (e) { console.error(e); }
+    const [m, c, f] = await Promise.all([
+      db.collection('missions').where('status','==','pending').get(),
+      db.collection('contracts').where('status','==','pending').get(),
+      db.collection('feedback').where('status','==','nou').get()
+    ]);
+    setBadge('missions', m.size);
+    setBadge('contracts', c.size);
+    setBadge('feedback', f.size);
+  } catch(e) {}
 }
 
 function setBadge(name, count) {
@@ -388,579 +81,424 @@ function setBadge(name, count) {
   el.style.display = count > 0 ? 'inline-block' : 'none';
 }
 
-async function loadTotalCoins() {
+async function loadCoins() {
   try {
     const snap = await db.collection('users').get();
     let total = 0;
     snap.forEach(d => { total += (d.data().vvCoins || 0); });
     const el = document.getElementById('total-coins');
     if (el) el.textContent = total + ' VVC';
-  } catch (e) {}
+  } catch(e) {}
 }
 
-// ============================================================
-// 5. MISIUNI
-// ============================================================
+// ── NAVIGARE ──
+function showSection(name) {
+  if (currentSection === 'circle' && name !== 'circle') {
+    if (_pendingUnsub) { _pendingUnsub(); _pendingUnsub = null; }
+    if (_activeUnsub)  { _activeUnsub();  _activeUnsub  = null; }
+  }
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  const sec = document.getElementById('section-' + name);
+  const nav = document.getElementById('nav-' + name);
+  if (sec) sec.classList.add('active');
+  if (nav) nav.classList.add('active');
 
+  // update titlu
+  const titles = {
+    missions:'Galerie Misiuni', contracts:'Contracte', feedback:'Feedback & Suport',
+    talent:'Talent Pool', leaderboard:'Leaderboard', keys:'Chei Beta',
+    config:'Config Live', audit:'Audit Log', map:'Harta Misiuni',
+    vvhi:'VVhi Shadow Mode', circle:'⬡ Inner Circle'
+  };
+  const titleEl = document.getElementById('section-heading');
+  if (titleEl) titleEl.textContent = titles[name] || name;
+
+  currentSection = name;
+
+  if (name === 'missions')    loadMissions('pending');
+  if (name === 'contracts')   loadContracts();
+  if (name === 'feedback')    loadFeedback();
+  if (name === 'talent')      loadTalentPool();
+  if (name === 'leaderboard') loadLeaderboard();
+  if (name === 'keys')        loadKeys();
+  if (name === 'audit')       loadAuditLog();
+  if (name === 'map')         initCEOMap();
+  if (name === 'vvhi')        loadVVhi();
+  if (name === 'config')      loadConfig();
+  if (name === 'circle')      switchCircleTab('pending');
+
+  logCEOAction('NAV', name);
+
+  // inchide sidebar pe mobile dupa selectie
+  const sb = document.getElementById('sidebar');
+  if (sb && sb.classList.contains('open') && window.innerWidth < 768) {
+    sb.classList.remove('open');
+    document.getElementById('main-content').classList.remove('shifted');
+  }
+}
+
+// ── MISIUNI ──
 async function loadMissions(status) {
-  // Update tab activ
   ['pending','approved','rejected'].forEach(s => {
     const t = document.getElementById('tab-' + s);
     if (t) t.classList.toggle('active', s === status);
   });
-
   const grid = document.getElementById('missions-grid');
   if (!grid) return;
   grid.innerHTML = '<div style="color:var(--text-muted);padding:20px">Se încarcă...</div>';
-
   try {
-    const snap = await db.collection('missions').where('status', '==', status).orderBy('createdAt', 'desc').get();
-    if (snap.empty) {
-      grid.innerHTML = '<div style="color:var(--text-muted);padding:20px">Nicio misiune cu statusul: ' + status + '</div>';
-      return;
-    }
+    const snap = await db.collection('missions').where('status','==',status).orderBy('createdAt','desc').get();
+    if (snap.empty) { grid.innerHTML = '<div style="color:var(--text-muted);padding:20px">Nicio misiune.</div>'; return; }
     grid.innerHTML = '';
-    snap.forEach(doc => {
-      const m = { id: doc.id, ...doc.data() };
-      grid.appendChild(buildMissionCard(m));
-    });
-  } catch (e) {
-    grid.innerHTML = '<div style="color:var(--danger);padding:20px">Eroare: ' + e.message + '</div>';
-  }
+    snap.forEach(doc => grid.appendChild(buildMissionCard({ id: doc.id, ...doc.data() })));
+  } catch(e) { grid.innerHTML = '<div style="color:var(--danger);padding:20px">Eroare: ' + e.message + '</div>'; }
 }
 
 function buildMissionCard(m) {
   const div = document.createElement('div');
-  div.className = 'photo-card';
-  div.id = 'mission-' + m.id;
-
-  const imgSrc = m.photoURL || m.imageUrl || '';
-  const userName = m.userName || m.userId || 'Anonim';
-  const reward = m.reward || COIN_REWARD_DEFAULT;
+  div.className = 'photo-card'; div.id = 'mission-' + m.id;
+  const img = m.photoURL || m.imageUrl || '';
+  const user = m.userName || m.userId || 'Anonim';
+  const reward = m.reward || COIN_DEFAULT;
   const date = m.createdAt ? new Date(m.createdAt.seconds * 1000).toLocaleDateString('ro') : '—';
-
   div.innerHTML = `
-    ${imgSrc ? `<img class="photo-img" src="${imgSrc}" alt="Misiune" onclick="openLightbox('${imgSrc}')">` : '<div style="height:120px;background:#111;display:flex;align-items:center;justify-content:center;color:var(--text-muted);font-size:12px">Fără imagine</div>'}
+    ${img ? `<img class="photo-img" src="${img}" onclick="openLightbox('${img}')">` : '<div style="height:120px;background:#111;display:flex;align-items:center;justify-content:center;color:var(--text-muted);font-size:12px">Fără imagine</div>'}
     <div class="photo-info">
-      ${m.status === 'rejected' ? '<span class="flag-badge">RESPINSĂ</span>' : ''}
-      <div class="photo-msg">${m.description || m.message || 'Fără descriere'}</div>
-      <div class="photo-meta">
-        <span>👤 ${userName}</span>
-        <span>📅 ${date}</span>
-      </div>
-      <div class="photo-meta" style="margin-top:6px">
-        <span>🪙 Reward: <b style="color:var(--gold)">${reward} VVC</b></span>
-        <span>📍 ${m.location || '—'}</span>
-      </div>
-      ${m.status === 'pending' ? `
-      <div class="action-row">
-        <button class="btn-approve" onclick="approveMission('${m.id}', '${m.userId}', ${reward})">✅ Aprobă</button>
-        <button class="btn-reject" onclick="rejectMission('${m.id}')">❌ Respinge</button>
-      </div>` : ''}
-      ${m.status === 'approved' ? '<div style="color:var(--safe-green);font-size:12px;margin-top:10px;font-weight:700">✅ Aprobată · +' + reward + ' VVC distribuit</div>' : ''}
-    </div>
-  `;
+      ${m.status==='rejected'?'<span class="flag-badge">RESPINSĂ</span>':''}
+      <div class="photo-msg">${m.description||m.message||'Fără descriere'}</div>
+      <div class="photo-meta"><span>👤 ${user}</span><span>📅 ${date}</span></div>
+      <div class="photo-meta" style="margin-top:6px"><span>🪙 <b style="color:var(--gold)">${reward} VVC</b></span><span>📍 ${m.location||'—'}</span></div>
+      ${m.status==='pending'?`<div class="action-row"><button class="btn-approve" onclick="approveMission('${m.id}','${m.userId}',${reward})">✅ Aprobă</button><button class="btn-reject" onclick="rejectMission('${m.id}')">❌ Respinge</button></div>`:''}
+      ${m.status==='approved'?`<div style="color:var(--safe-green);font-size:12px;margin-top:8px;font-weight:700">✅ Aprobată · +${reward} VVC</div>`:''}
+    </div>`;
   return div;
 }
 
-async function approveMission(missionId, userId, rewardAmount) {
-  if (!confirm('Aprobi misiunea și distribui ' + rewardAmount + ' VV Coins?')) return;
-  const batch = db.batch();
+async function approveMission(missionId, userId, reward) {
+  if (!confirm('Aprobi misiunea și distribui ' + reward + ' VV Coins?')) return;
   try {
-    batch.update(db.collection('missions').doc(missionId), {
-      status: 'approved',
-      validatedAt: firebase.firestore.FieldValue.serverTimestamp(),
-      validatedBy: currentCEO?.uid || 'ceo'
-    });
+    const batch = db.batch();
+    batch.update(db.collection('missions').doc(missionId), { status:'approved', validatedAt: firebase.firestore.FieldValue.serverTimestamp(), validatedBy: currentCEO.uid });
     if (userId && userId !== 'undefined') {
-      batch.update(db.collection('users').doc(userId), {
-        vvCoins: firebase.firestore.FieldValue.increment(rewardAmount),
-        missionsApproved: firebase.firestore.FieldValue.increment(1)
-      });
-      batch.set(db.collection('transactions').doc(), {
-        userId, amount: rewardAmount, type: 'mission_reward',
-        missionId, timestamp: firebase.firestore.FieldValue.serverTimestamp()
-      });
+      batch.update(db.collection('users').doc(userId), { vvCoins: firebase.firestore.FieldValue.increment(reward), missionsApproved: firebase.firestore.FieldValue.increment(1) });
     }
     await batch.commit();
-
-    // VVhi Shadow Mode log
-    logVVhi('APPROVE_MISSION', { missionId, userId, reward: rewardAmount });
-    logCEOAction('APPROVE_MISSION', 'Misiune aprobată: ' + missionId + ' | +' + rewardAmount + ' VVC → ' + userId);
-
-    // Pulse event
-    db.collection('pulse_events').add({
-      type: 'mission', action: 'approba', icon: '🎯',
-      message: 'O misiune a fost <b>validată</b> de CEO · +' + rewardAmount + ' VVC',
-      tagClass: 'tag-beta', tagText: 'BETA',
-      timestamp: firebase.firestore.FieldValue.serverTimestamp()
-    });
-
-    // Rimuovi card
-    const card = document.getElementById('mission-' + missionId);
-    if (card) card.remove();
-    showNotif('✅ Misiune aprobată! +' + rewardAmount + ' VVC distribuit.');
-    loadBadgeCounts();
-  } catch (e) {
-    showNotif('Eroare: ' + e.message, true);
-  }
+    logVVhi('APPROVE_MISSION', { missionId, userId, reward });
+    logCEOAction('APPROVE_MISSION', missionId);
+    document.getElementById('mission-' + missionId)?.remove();
+    showNotif('✅ +' + reward + ' VVC distribuit!');
+    loadBadges();
+  } catch(e) { showNotif('Eroare: ' + e.message, true); }
 }
 
 async function rejectMission(missionId) {
   if (!confirm('Respingi această misiune?')) return;
   try {
-    await db.collection('missions').doc(missionId).update({
-      status: 'rejected',
-      rejectedAt: firebase.firestore.FieldValue.serverTimestamp(),
-      rejectedBy: currentCEO?.uid || 'ceo'
-    });
+    await db.collection('missions').doc(missionId).update({ status:'rejected', rejectedAt: firebase.firestore.FieldValue.serverTimestamp() });
     logVVhi('REJECT_MISSION', { missionId });
-    logCEOAction('REJECT_MISSION', 'Misiune respinsă: ' + missionId);
-    const card = document.getElementById('mission-' + missionId);
-    if (card) card.remove();
+    logCEOAction('REJECT_MISSION', missionId);
+    document.getElementById('mission-' + missionId)?.remove();
     showNotif('Misiune respinsă.');
-    loadBadgeCounts();
-  } catch (e) {
-    showNotif('Eroare la anulare: ' + e.message, true);
-  }
+    loadBadges();
+  } catch(e) { showNotif('Eroare: ' + e.message, true); }
 }
 
 async function deleteAllRejected() {
   if (!confirm('Ștergi toate misiunile respinse?')) return;
   try {
-    const snap = await db.collection('missions').where('status', '==', 'rejected').get();
-    const batch = db.batch();
-    snap.forEach(d => batch.delete(d.ref));
-    await batch.commit();
-    logCEOAction('DELETE_REJECTED', 'Șterse ' + snap.size + ' misiuni respinse');
-    showNotif('🗑 ' + snap.size + ' misiuni șterse.');
-    loadMissions('rejected');
-  } catch (e) { showNotif('Eroare: ' + e.message, true); }
+    const snap = await db.collection('missions').where('status','==','rejected').get();
+    const batch = db.batch(); snap.forEach(d => batch.delete(d.ref)); await batch.commit();
+    showNotif('🗑 ' + snap.size + ' misiuni șterse.'); loadMissions('rejected');
+  } catch(e) { showNotif('Eroare: ' + e.message, true); }
 }
 
-// ============================================================
-// 6. CONTRACTE
-// ============================================================
-
+// ── CONTRACTE ──
 async function loadContracts() {
   const list = document.getElementById('contracts-list');
   if (!list) return;
   list.innerHTML = '<div style="color:var(--text-muted);padding:20px">Se încarcă...</div>';
   try {
-    const snap = await db.collection('contracts').orderBy('createdAt', 'desc').limit(50).get();
+    const snap = await db.collection('contracts').orderBy('createdAt','desc').limit(50).get();
     if (snap.empty) { list.innerHTML = '<div style="color:var(--text-muted);padding:20px">Niciun contract.</div>'; return; }
     list.innerHTML = '';
     snap.forEach(doc => {
       const c = { id: doc.id, ...doc.data() };
-      const date = c.createdAt ? new Date(c.createdAt.seconds * 1000).toLocaleDateString('ro') : '—';
-      const div = document.createElement('div');
-      div.className = 'contract-card';
-      div.innerHTML = `
-        <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:10px">
-          <div>
-            <div style="font-size:15px;font-weight:700;margin-bottom:5px">${c.title || 'Contract fără titlu'}</div>
-            <div style="font-size:13px;color:var(--text-muted)">${c.description || '—'}</div>
-            <div style="font-size:11px;color:var(--text-muted);margin-top:8px">👤 ${c.userId || 'Anonim'} · 📅 ${date} · 🪙 ${c.reward || 0} VVC</div>
-          </div>
-          <div style="display:flex;gap:8px;flex-shrink:0">
-            <span style="background:${c.status === 'pending' ? 'rgba(255,149,0,0.1)' : c.status === 'active' ? 'rgba(52,199,89,0.1)' : 'rgba(255,255,255,0.05)'};color:${c.status === 'pending' ? '#ff9500' : c.status === 'active' ? 'var(--safe-green)' : 'var(--text-muted)'};border:1px solid currentColor;padding:4px 10px;border-radius:6px;font-size:11px;font-weight:700">${(c.status || 'unknown').toUpperCase()}</span>
-            ${c.status === 'pending' ? `<button class="btn-approve" style="padding:6px 12px;font-size:11px" onclick="activateContract('${c.id}')">Activează</button>` : ''}
-            <button class="btn-reject" style="padding:6px 12px;font-size:11px" onclick="deleteContract('${c.id}')">Șterge</button>
-          </div>
-        </div>
-      `;
+      const date = c.createdAt ? new Date(c.createdAt.seconds*1000).toLocaleDateString('ro') : '—';
+      const div = document.createElement('div'); div.className = 'card';
+      div.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap"><div><div style="font-size:14px;font-weight:700;margin-bottom:4px">${c.title||'Contract'}</div><div style="font-size:12px;color:var(--text-muted)">${c.description||'—'}</div><div style="font-size:11px;color:var(--text-muted);margin-top:6px">👤 ${c.userId||'Anonim'} · 📅 ${date} · 🪙 ${c.reward||0} VVC</div></div><div style="display:flex;gap:8px;flex-shrink:0">${c.status==='pending'?`<button class="btn-approve" onclick="activateContract('${c.id}')">Activează</button>`:''}<button class="btn-reject" onclick="deleteContract('${c.id}')">Șterge</button></div></div>`;
       list.appendChild(div);
     });
-  } catch (e) { list.innerHTML = '<div style="color:var(--danger);padding:20px">Eroare: ' + e.message + '</div>'; }
+  } catch(e) { list.innerHTML = '<div style="color:var(--danger);padding:20px">Eroare: ' + e.message + '</div>'; }
 }
 
-async function activateContract(contractId) {
-  try {
-    await db.collection('contracts').doc(contractId).update({ status: 'active' });
-    logCEOAction('ACTIVATE_CONTRACT', contractId);
-    showNotif('Contract activat!');
-    loadContracts();
-  } catch (e) { showNotif('Eroare: ' + e.message, true); }
-}
+async function activateContract(id) { try { await db.collection('contracts').doc(id).update({ status:'active' }); showNotif('Contract activat!'); loadContracts(); } catch(e) { showNotif('Eroare: ' + e.message, true); } }
+async function deleteContract(id) { if (!confirm('Ștergi contractul?')) return; try { await db.collection('contracts').doc(id).delete(); showNotif('Contract șters.'); loadContracts(); } catch(e) { showNotif('Eroare: ' + e.message, true); } }
 
-async function deleteContract(contractId) {
-  if (!confirm('Ștergi contractul?')) return;
-  try {
-    await db.collection('contracts').doc(contractId).delete();
-    logCEOAction('DELETE_CONTRACT', contractId);
-    showNotif('Contract șters.');
-    loadContracts();
-  } catch (e) { showNotif('Eroare: ' + e.message, true); }
-}
-
-// ============================================================
-// 7. FEEDBACK & BUG REPORTS
-// ============================================================
-
+// ── FEEDBACK ──
 async function loadFeedback() {
   const list = document.getElementById('feedback-list');
   if (!list) return;
   list.innerHTML = '<div style="color:var(--text-muted);padding:20px">Se încarcă...</div>';
   try {
-    const snap = await db.collection('feedback').orderBy('timestamp', 'desc').limit(50).get();
+    const snap = await db.collection('feedback').orderBy('timestamp','desc').limit(50).get();
     if (snap.empty) { list.innerHTML = '<div style="color:var(--text-muted);padding:20px">Niciun feedback.</div>'; return; }
     list.innerHTML = '';
     snap.forEach(doc => {
       const f = { id: doc.id, ...doc.data() };
-      const date = f.timestamp ? new Date(f.timestamp.seconds * 1000).toLocaleString('ro') : '—';
-      const isBug = f.type === 'bug_report';
-      const div = document.createElement('div');
-      div.className = 'feedback-card' + (isBug ? ' bug' : '');
-      div.innerHTML = `
-        <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:10px;margin-bottom:10px">
-          <div>
-            ${isBug ? '<span class="flag-badge">BUG REPORT</span>' : ''}
-            <div style="font-size:13px;color:#fff;margin-top:5px">${f.message || '—'}</div>
-            <div style="font-size:11px;color:var(--text-muted);margin-top:6px">👤 ${f.alias || f.uid || 'Anonim'} · 📅 ${date} · Sursă: ${f.source || '—'}</div>
-          </div>
-          <div style="display:flex;gap:8px">
-            <button class="btn-reply" onclick="replyFeedback('${f.id}', '${(f.alias||'utilizator').replace(/'/g,"\\'")}')">💬 Răspunde</button>
-            <button class="btn-reject" style="padding:6px 12px;font-size:11px" onclick="resolveFeedback('${f.id}')">✓ Rezolvat</button>
-          </div>
-        </div>
-        ${f.reply ? `<div style="background:rgba(10,132,255,0.08);border:1px solid rgba(10,132,255,0.2);border-radius:8px;padding:10px;font-size:12px;color:rgba(255,255,255,0.6)">💬 Răspuns tău: ${f.reply}</div>` : ''}
-      `;
+      const date = f.timestamp ? new Date(f.timestamp.seconds*1000).toLocaleString('ro') : '—';
+      const div = document.createElement('div'); div.className = 'card';
+      div.innerHTML = `${f.type==='bug_report'?'<span class="flag-badge">BUG REPORT</span>':''}<div style="font-size:13px;color:#fff;margin:8px 0">${f.message||'—'}</div><div style="font-size:11px;color:var(--text-muted)">👤 ${f.alias||f.uid||'Anonim'} · 📅 ${date}</div><div style="display:flex;gap:8px;margin-top:10px"><button class="btn-reply" onclick="replyFeedback('${f.id}','${(f.alias||'user').replace(/'/g,"\\'")}')">💬 Răspunde</button><button class="btn-reject" style="padding:6px 12px" onclick="resolveFeedback('${f.id}')">✓ Rezolvat</button></div>${f.reply?`<div style="background:rgba(10,132,255,0.08);border:1px solid rgba(10,132,255,0.2);border-radius:8px;padding:10px;font-size:12px;color:rgba(255,255,255,0.6);margin-top:8px">💬 ${f.reply}</div>`:''}`;
       list.appendChild(div);
     });
-  } catch (e) { list.innerHTML = '<div style="color:var(--danger);padding:20px">Eroare: ' + e.message + '</div>'; }
+  } catch(e) { list.innerHTML = '<div style="color:var(--danger);padding:20px">Eroare: ' + e.message + '</div>'; }
 }
 
-function replyFeedback(feedbackId, alias) {
-  const reply = prompt('Răspuns pentru ' + alias + ':');
-  if (!reply) return;
-  db.collection('feedback').doc(feedbackId).update({ reply, repliedAt: firebase.firestore.FieldValue.serverTimestamp(), status: 'rezolvat' })
-    .then(() => { showNotif('Răspuns salvat!'); logCEOAction('REPLY_FEEDBACK', feedbackId); loadFeedback(); })
-    .catch(e => showNotif('Eroare: ' + e.message, true));
-}
+function replyFeedback(id, alias) { const r = prompt('Răspuns pentru ' + alias + ':'); if (!r) return; db.collection('feedback').doc(id).update({ reply:r, status:'rezolvat', repliedAt: firebase.firestore.FieldValue.serverTimestamp() }).then(() => { showNotif('Răspuns salvat!'); loadFeedback(); }).catch(e => showNotif('Eroare: ' + e.message, true)); }
+async function resolveFeedback(id) { try { await db.collection('feedback').doc(id).update({ status:'rezolvat' }); showNotif('Rezolvat!'); loadFeedback(); } catch(e) { showNotif('Eroare: ' + e.message, true); } }
+async function deleteAllFeedback() { if (!confirm('Ștergi tot feedback-ul rezolvat?')) return; try { const snap = await db.collection('feedback').where('status','==','rezolvat').get(); const batch = db.batch(); snap.forEach(d => batch.delete(d.ref)); await batch.commit(); showNotif('🗑 Șters.'); loadFeedback(); } catch(e) { showNotif('Eroare: ' + e.message, true); } }
 
-async function resolveFeedback(feedbackId) {
-  try {
-    await db.collection('feedback').doc(feedbackId).update({ status: 'rezolvat' });
-    logCEOAction('RESOLVE_FEEDBACK', feedbackId);
-    showNotif('Marcat ca rezolvat.');
-    loadFeedback();
-  } catch (e) { showNotif('Eroare: ' + e.message, true); }
-}
-
-async function deleteAllFeedback() {
-  if (!confirm('Ștergi tot feedback-ul rezolvat?')) return;
-  try {
-    const snap = await db.collection('feedback').where('status', '==', 'rezolvat').get();
-    const batch = db.batch();
-    snap.forEach(d => batch.delete(d.ref));
-    await batch.commit();
-    showNotif('🗑 ' + snap.size + ' feedback-uri șterse.');
-    loadFeedback();
-  } catch (e) { showNotif('Eroare: ' + e.message, true); }
-}
-
-// ============================================================
-// 8. TALENT POOL
-// ============================================================
-
+// ── TALENT POOL ──
 async function loadTalentPool() {
   const list = document.getElementById('talent-list');
   if (!list) return;
   list.innerHTML = '<div style="color:var(--text-muted);padding:20px">Se încarcă...</div>';
   try {
-    const snap = await db.collection('talent_pool').orderBy('appliedAt', 'desc').get();
+    const snap = await db.collection('talent_pool').orderBy('appliedAt','desc').get();
     if (snap.empty) { list.innerHTML = '<div style="color:var(--text-muted);padding:20px">Niciun aplicant.</div>'; return; }
     list.innerHTML = '';
     snap.forEach(doc => {
       const u = { id: doc.id, ...doc.data() };
-      const div = document.createElement('div');
-      div.className = 'talent-card';
-      div.innerHTML = `
-        <div style="flex:1;min-width:0">
-          <div style="font-size:14px;font-weight:700">${u.name || u.userId || 'Anonim'}</div>
-          <div style="font-size:12px;color:var(--text-muted);margin-top:3px">${u.skills || '—'} · 🪙 ${u.vvCoins || 0} VVC</div>
-          <div style="font-size:11px;color:var(--text-muted);margin-top:3px">${u.bio || ''}</div>
-        </div>
-        <select class="rank-select" onchange="updateUserRank('${u.userId || u.id}', this.value)">
-          ${RANKS.map(r => `<option value="${r}" ${u.rank === r ? 'selected' : ''}>${r}</option>`).join('')}
-        </select>
-        <button class="btn-reject" style="padding:8px 12px;font-size:11px;min-height:36px" onclick="removeTalent('${u.id}')">✕</button>
-      `;
+      const div = document.createElement('div'); div.className = 'talent-card';
+      div.innerHTML = `<div style="flex:1;min-width:0"><div style="font-size:14px;font-weight:700">${u.name||u.userId||'Anonim'}</div><div style="font-size:12px;color:var(--text-muted);margin-top:2px">${u.skills||'—'} · 🪙 ${u.vvCoins||0} VVC</div></div><select class="rank-select" onchange="updateRank('${u.userId||u.id}',this.value)">${RANKS.map(r=>`<option value="${r}" ${u.rank===r?'selected':''}>${r}</option>`).join('')}</select><button class="btn-reject" style="padding:8px 12px;font-size:11px" onclick="removeTalent('${u.id}')">✕</button>`;
       list.appendChild(div);
     });
-  } catch (e) { list.innerHTML = '<div style="color:var(--danger);padding:20px">Eroare: ' + e.message + '</div>'; }
+  } catch(e) { list.innerHTML = '<div style="color:var(--danger);padding:20px">Eroare: ' + e.message + '</div>'; }
 }
 
-async function updateUserRank(userId, newRank) {
-  try {
-    await db.collection('users').doc(userId).update({ rank: newRank });
-    await db.collection('talent_pool').where('userId', '==', userId).get()
-      .then(snap => snap.forEach(d => d.ref.update({ rank: newRank })));
-    logCEOAction('UPDATE_RANK', userId + ' → ' + newRank);
-    showNotif('Rang actualizat: ' + newRank);
-  } catch (e) { showNotif('Eroare: ' + e.message, true); }
-}
+async function updateRank(userId, rank) { try { await db.collection('users').doc(userId).update({ rank }); showNotif('Rang: ' + rank); } catch(e) { showNotif('Eroare: ' + e.message, true); } }
+async function removeTalent(id) { if (!confirm('Elimini?')) return; try { await db.collection('talent_pool').doc(id).delete(); showNotif('Eliminat.'); loadTalentPool(); } catch(e) { showNotif('Eroare: ' + e.message, true); } }
 
-async function removeTalent(talentId) {
-  if (!confirm('Elimini din Talent Pool?')) return;
-  try {
-    await db.collection('talent_pool').doc(talentId).delete();
-    logCEOAction('REMOVE_TALENT', talentId);
-    showNotif('Eliminat din Talent Pool.');
-    loadTalentPool();
-  } catch (e) { showNotif('Eroare: ' + e.message, true); }
-}
-
-// ============================================================
-// 9. LEADERBOARD
-// ============================================================
-
+// ── LEADERBOARD ──
 async function loadLeaderboard() {
   const tbody = document.getElementById('leaderboard-body');
   if (!tbody) return;
   try {
-    const snap = await db.collection('users').orderBy('vvCoins', 'desc').limit(20).get();
+    const snap = await db.collection('users').orderBy('vvCoins','desc').limit(20).get();
     if (snap.empty) { tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--text-muted);padding:20px">Niciun utilizator.</td></tr>'; return; }
-    let html = '';
-    let i = 1;
-    snap.forEach(doc => {
-      const u = doc.data();
-      html += `<tr>
-        <td class="${i <= 3 ? 'rank-gold' : ''}">${i === 1 ? '🥇' : i === 2 ? '🥈' : i === 3 ? '🥉' : '#' + i}</td>
-        <td>${u.name || u.email || doc.id.slice(0,8)}</td>
-        <td><span class="badge-onyx">${u.rank || 'Neofit'}</span></td>
-        <td style="color:var(--gold);font-weight:700">${u.vvCoins || 0} VVC</td>
-        <td>${u.missionsApproved || 0}</td>
-      </tr>`;
-      i++;
-    });
+    let html = '', i = 1;
+    snap.forEach(doc => { const u = doc.data(); html += `<tr><td class="${i<=3?'rank-gold':''}">${i===1?'🥇':i===2?'🥈':i===3?'🥉':'#'+i}</td><td>${u.name||u.email||doc.id.slice(0,8)}</td><td><span class="badge-onyx">${u.rank||'Neofit'}</span></td><td style="color:var(--gold);font-weight:700">${u.vvCoins||0} VVC</td><td>${u.missionsApproved||0}</td></tr>`; i++; });
     tbody.innerHTML = html;
-  } catch (e) { tbody.innerHTML = '<tr><td colspan="5" style="color:var(--danger);padding:20px">Eroare: ' + e.message + '</td></tr>'; }
+  } catch(e) { tbody.innerHTML = '<tr><td colspan="5" style="color:var(--danger)">Eroare: ' + e.message + '</td></tr>'; }
 }
 
-// ============================================================
-// 10. CHEI BETA
-// ============================================================
-
+// ── CHEI BETA ──
 async function loadKeys() {
   const list = document.getElementById('keys-list');
   if (!list) return;
   try {
-    const snap = await db.collection('keys').orderBy('createdAt', 'desc').limit(20).get();
-    if (snap.empty) { list.innerHTML = '<div style="color:var(--text-muted);margin-top:15px">Nicio cheie generată.</div>'; return; }
+    const snap = await db.collection('keys').orderBy('createdAt','desc').limit(20).get();
+    if (snap.empty) { list.innerHTML = '<div style="color:var(--text-muted);margin-top:12px">Nicio cheie generată.</div>'; return; }
     list.innerHTML = '';
-    snap.forEach(doc => {
-      const k = doc.data();
-      const div = document.createElement('div');
-      div.className = 'key-item';
-      div.innerHTML = `
-        <span>${k.key || doc.id}</span>
-        <span class="key-status">${k.status === 'used' ? '🔴 FOLOSITĂ' : '🟢 LIBERĂ'}</span>
-      `;
-      list.appendChild(div);
-    });
-  } catch (e) {}
+    snap.forEach(doc => { const k = doc.data(); const div = document.createElement('div'); div.className = 'key-item'; div.innerHTML = `<span>${k.key||doc.id}</span><span class="key-status">${k.status==='used'?'🔴 FOLOSITĂ':'🟢 LIBERĂ'}</span>`; list.appendChild(div); });
+  } catch(e) {}
 }
 
 function generateKey() {
-  const key = 'VV-BETA-' + Math.random().toString(36).substr(2, 4).toUpperCase() + '-' + Math.random().toString(36).substr(2, 4).toUpperCase();
-  db.collection('keys').add({ key, status: 'free', createdAt: firebase.firestore.FieldValue.serverTimestamp() })
-    .then(() => { showNotif('🔑 Cheie generată: ' + key); logCEOAction('GEN_KEY', key); loadKeys(); })
-    .catch(e => showNotif('Eroare: ' + e.message, true));
+  const key = 'VV-BETA-' + Math.random().toString(36).substr(2,4).toUpperCase() + '-' + Math.random().toString(36).substr(2,4).toUpperCase();
+  db.collection('keys').add({ key, status:'free', createdAt: firebase.firestore.FieldValue.serverTimestamp() }).then(() => { showNotif('🔑 ' + key); logCEOAction('GEN_KEY', key); loadKeys(); }).catch(e => showNotif('Eroare: ' + e.message, true));
 }
 
-// ============================================================
-// 11. REMOTE CONFIG
-// ============================================================
-
+// ── CONFIG ──
 async function loadConfig() {
   try {
     const snap = await db.collection('config').doc('global').get();
     if (snap.exists) {
       const d = snap.data();
-      const coinInput = document.getElementById('coin-value-input');
-      const msgInput = document.getElementById('daily-message-input');
-      if (coinInput && d.coinValue) coinInput.value = d.coinValue;
-      if (msgInput && d.dailyMessage) msgInput.value = d.dailyMessage;
+      const ci = document.getElementById('coin-value-input');
+      const mi = document.getElementById('daily-message-input');
+      if (ci && d.coinValue) ci.value = d.coinValue;
+      if (mi && d.dailyMessage) mi.value = d.dailyMessage;
     }
-  } catch (e) {}
+  } catch(e) {}
 }
 
-function setKillSwitch(isLive) {
-  db.collection('config').doc('maintenance').set({ isLive }, { merge: true })
-    .then(() => { showNotif(isLive ? '🟢 Site activ!' : '🔴 Site în mentenanță!'); logCEOAction('KILLSWITCH', isLive ? 'ON' : 'OFF'); })
-    .catch(e => showNotif('Eroare: ' + e.message, true));
-}
+function setKillSwitch(isLive) { db.collection('config').doc('maintenance').set({ isLive }, { merge:true }).then(() => showNotif(isLive?'🟢 Site activ!':'🔴 Mentenanță!')).catch(e => showNotif('Eroare: ' + e.message, true)); }
+function updateCoinValue() { const val = parseInt(document.getElementById('coin-value-input')?.value)||10; db.collection('config').doc('global').set({ coinValue:val }, { merge:true }).then(() => showNotif('🪙 ' + val + ' VVC/misiune')).catch(e => showNotif('Eroare: ' + e.message, true)); }
+function updateDailyMessage() { const msg = document.getElementById('daily-message-input')?.value||''; if (!msg) return; db.collection('config').doc('global').set({ dailyMessage:msg }, { merge:true }).then(() => showNotif('📢 Mesaj publicat!')).catch(e => showNotif('Eroare: ' + e.message, true)); }
 
-function updateCoinValue() {
-  const val = parseInt(document.getElementById('coin-value-input')?.value) || 10;
-  db.collection('config').doc('global').set({ coinValue: val }, { merge: true })
-    .then(() => { showNotif('🪙 Valoare VV Coin: ' + val); logCEOAction('CONFIG_COIN', val); })
-    .catch(e => showNotif('Eroare: ' + e.message, true));
-}
-
-function updateDailyMessage() {
-  const msg = document.getElementById('daily-message-input')?.value || '';
-  if (!msg) return;
-  db.collection('config').doc('global').set({ dailyMessage: msg }, { merge: true })
-    .then(() => { showNotif('📢 Mesaj publicat!'); logCEOAction('CONFIG_MSG', msg.slice(0, 50)); })
-    .catch(e => showNotif('Eroare: ' + e.message, true));
-}
-
-// ============================================================
-// 12. AUDIT LOG
-// ============================================================
-
-function logCEOAction(action, details = '') {
-  if (!currentCEO) return;
-  db.collection('audit_log').add({
-    action, details,
-    ceoUid: currentCEO.uid,
-    timestamp: firebase.firestore.FieldValue.serverTimestamp()
-  }).catch(() => {});
-}
+// ── AUDIT LOG ──
+function logCEOAction(action, details='') { if (!currentCEO) return; db.collection('audit_log').add({ action, details, ceoUid: currentCEO.uid, timestamp: firebase.firestore.FieldValue.serverTimestamp() }).catch(()=>{}); }
 
 async function loadAuditLog() {
   const tbody = document.getElementById('audit-log-body');
   if (!tbody) return;
   try {
-    const snap = await db.collection('audit_log').orderBy('timestamp', 'desc').limit(50).get();
-    if (snap.empty) { tbody.innerHTML = '<tr><td colspan="3" style="text-align:center;color:var(--text-muted);padding:20px">Nicio acțiune înregistrată.</td></tr>'; return; }
+    const snap = await db.collection('audit_log').orderBy('timestamp','desc').limit(50).get();
+    if (snap.empty) { tbody.innerHTML = '<tr><td colspan="3" style="text-align:center;color:var(--text-muted);padding:20px">Nicio acțiune.</td></tr>'; return; }
     let html = '';
-    snap.forEach(doc => {
-      const l = doc.data();
-      const date = l.timestamp ? new Date(l.timestamp.seconds * 1000).toLocaleString('ro') : '—';
-      html += `<tr><td style="font-weight:700;color:var(--gold)">${l.action}</td><td>${l.details || '—'}</td><td style="white-space:nowrap">${date}</td></tr>`;
-    });
+    snap.forEach(doc => { const l = doc.data(); const date = l.timestamp ? new Date(l.timestamp.seconds*1000).toLocaleString('ro') : '—'; html += `<tr><td style="font-weight:700;color:var(--gold)">${l.action}</td><td style="font-size:11px">${l.details||'—'}</td><td style="white-space:nowrap;font-size:11px">${date}</td></tr>`; });
     tbody.innerHTML = html;
-  } catch (e) { tbody.innerHTML = '<tr><td colspan="3" style="color:var(--danger)">Eroare: ' + e.message + '</td></tr>'; }
+  } catch(e) { tbody.innerHTML = '<tr><td colspan="3" style="color:var(--danger)">Eroare: ' + e.message + '</td></tr>'; }
 }
 
-// ============================================================
-// 13. HARTA CEO (LEAFLET)
-// ============================================================
-
-let ceoMapInstance = null;
-
+// ── HARTA ──
 function initCEOMap() {
   if (ceoMapInstance) return;
   if (typeof L === 'undefined') {
-    const s = document.createElement('script');
-    s.src = 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js';
-    s.onload = () => { buildCEOMap(); };
-    document.head.appendChild(s);
-    const css = document.createElement('link');
-    css.rel = 'stylesheet';
-    css.href = 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css';
-    document.head.appendChild(css);
-  } else {
-    buildCEOMap();
-  }
+    const css = document.createElement('link'); css.rel='stylesheet'; css.href='https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css'; document.head.appendChild(css);
+    const s = document.createElement('script'); s.src='https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js'; s.onload=buildCEOMap; document.head.appendChild(s);
+  } else { buildCEOMap(); }
 }
 
 function buildCEOMap() {
   const el = document.getElementById('ceo-map');
   if (!el || ceoMapInstance) return;
-  ceoMapInstance = L.map('ceo-map', { center: [44.4268, 26.1025], zoom: 12, zoomControl: true });
-  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { maxZoom: 19, subdomains: 'abcd' }).addTo(ceoMapInstance);
-
-  db.collection('missions').where('status', '==', 'pending').get().then(snap => {
-    snap.forEach(doc => {
-      const m = doc.data();
-      if (m.lat && m.lng) {
-        L.circleMarker([m.lat, m.lng], { radius: 8, color: '#D4AF37', fillColor: '#D4AF37', fillOpacity: 0.8 })
-          .addTo(ceoMapInstance)
-          .bindPopup(`<div class="ceo-popup" style="padding:12px;min-width:180px"><b style="color:#D4AF37">${m.userName || 'Anonim'}</b><br><span style="font-size:12px;color:rgba(255,255,255,0.6)">${m.description || '—'}</span></div>`, { className: 'ceo-popup' });
-      }
-    });
-  }).catch(() => {});
+  ceoMapInstance = L.map('ceo-map', { center:[44.4268,26.1025], zoom:12 });
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { maxZoom:19, subdomains:'abcd' }).addTo(ceoMapInstance);
+  db.collection('missions').where('status','==','pending').get().then(snap => { snap.forEach(doc => { const m = doc.data(); if (m.lat && m.lng) L.circleMarker([m.lat,m.lng], { radius:8, color:'#D4AF37', fillColor:'#D4AF37', fillOpacity:0.8 }).addTo(ceoMapInstance).bindPopup(`<b style="color:#D4AF37">${m.userName||'Anonim'}</b><br>${m.description||'—'}`); }); }).catch(()=>{});
 }
 
-// ============================================================
-// 14. VVHI SHADOW MODE
-// ============================================================
-
-function logVVhi(action, context) {
-  db.collection('vvhi_dataset').add({
-    action, context,
-    ceoUid: currentCEO?.uid || 'ceo',
-    timestamp: firebase.firestore.FieldValue.serverTimestamp()
-  }).catch(() => {});
-}
+// ── VVHI ──
+function logVVhi(action, context) { db.collection('vvhi_dataset').add({ action, context, ceoUid: currentCEO?.uid||'ceo', timestamp: firebase.firestore.FieldValue.serverTimestamp() }).catch(()=>{}); }
 
 async function loadVVhi() {
   const tbody = document.getElementById('vvhi-body');
   const statsEl = document.getElementById('vvhi-stats');
   if (!tbody) return;
   try {
-    const snap = await db.collection('vvhi_dataset').orderBy('timestamp', 'desc').limit(100).get();
-    if (snap.empty) { tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:var(--text-muted);padding:20px">Nicio decizie înregistrată încă.</td></tr>'; return; }
-
-    // Stats
-    let approvals = 0, rejections = 0;
-    snap.forEach(d => {
-      if (d.data().action === 'APPROVE_MISSION') approvals++;
-      if (d.data().action === 'REJECT_MISSION') rejections++;
-    });
-    if (statsEl) statsEl.innerHTML = `
-      <div class="vvhi-stat-card"><div class="vvhi-stat-val" style="color:var(--safe-green)">${approvals}</div><div class="vvhi-stat-lbl">Aprobări</div></div>
-      <div class="vvhi-stat-card"><div class="vvhi-stat-val" style="color:var(--danger)">${rejections}</div><div class="vvhi-stat-lbl">Respingeri</div></div>
-      <div class="vvhi-stat-card"><div class="vvhi-stat-val">${snap.size}</div><div class="vvhi-stat-lbl">Total decizii</div></div>
-      <div class="vvhi-stat-card"><div class="vvhi-stat-val" style="color:var(--gold)">${approvals > 0 ? Math.round((approvals/(approvals+rejections))*100) : 0}%</div><div class="vvhi-stat-lbl">Rata aprobare</div></div>
-    `;
-
-    let html = '';
-    snap.forEach(doc => {
-      const v = doc.data();
-      const date = v.timestamp ? new Date(v.timestamp.seconds * 1000).toLocaleString('ro') : '—';
-      const ctx = typeof v.context === 'object' ? JSON.stringify(v.context) : (v.context || '—');
-      html += `<tr>
-        <td style="font-weight:700;color:${v.action.includes('APPROVE') ? 'var(--safe-green)' : v.action.includes('REJECT') ? 'var(--danger)' : 'var(--gold)'}">${v.action}</td>
-        <td style="font-size:11px;color:var(--text-muted)">${ctx.slice(0, 80)}</td>
-        <td style="color:#fff;font-weight:600">${v.action.includes('APPROVE') ? '✅ Aprobat' : v.action.includes('REJECT') ? '❌ Respins' : '📝 Acțiune'}</td>
-        <td style="white-space:nowrap;font-size:11px">${date}</td>
-      </tr>`;
-    });
+    const snap = await db.collection('vvhi_dataset').orderBy('timestamp','desc').limit(100).get();
+    if (snap.empty) { tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:var(--text-muted);padding:20px">Nicio decizie înregistrată.</td></tr>'; return; }
+    let approvals=0, rejections=0;
+    snap.forEach(d => { if (d.data().action==='APPROVE_MISSION') approvals++; if (d.data().action==='REJECT_MISSION') rejections++; });
+    if (statsEl) statsEl.innerHTML = `<div class="stat-card"><div class="stat-val" style="color:var(--safe-green)">${approvals}</div><div class="stat-lbl">Aprobări</div></div><div class="stat-card"><div class="stat-val" style="color:var(--danger)">${rejections}</div><div class="stat-lbl">Respingeri</div></div><div class="stat-card"><div class="stat-val">${snap.size}</div><div class="stat-lbl">Total</div></div><div class="stat-card"><div class="stat-val" style="color:var(--gold)">${approvals>0?Math.round(approvals/(approvals+rejections)*100):0}%</div><div class="stat-lbl">Rata aprobare</div></div>`;
+    let html='';
+    snap.forEach(doc => { const v=doc.data(); const date=v.timestamp?new Date(v.timestamp.seconds*1000).toLocaleString('ro'):'—'; const ctx=typeof v.context==='object'?JSON.stringify(v.context):(v.context||'—'); html+=`<tr><td style="font-weight:700;color:${v.action.includes('APPROVE')?'var(--safe-green)':v.action.includes('REJECT')?'var(--danger)':'var(--gold)'}">${v.action}</td><td style="font-size:11px;color:var(--text-muted)">${ctx.slice(0,60)}</td><td>${v.action.includes('APPROVE')?'✅':v.action.includes('REJECT')?'❌':'📝'}</td><td style="white-space:nowrap;font-size:11px">${date}</td></tr>`; });
     tbody.innerHTML = html;
-  } catch (e) { tbody.innerHTML = '<tr><td colspan="4" style="color:var(--danger)">Eroare: ' + e.message + '</td></tr>'; }
+  } catch(e) { tbody.innerHTML = '<tr><td colspan="4" style="color:var(--danger)">Eroare: ' + e.message + '</td></tr>'; }
 }
 
-// ============================================================
-// 15. LIGHTBOX
-// ============================================================
+// ── LIGHTBOX ──
+function openLightbox(src) { const lb=document.getElementById('lightbox'); const img=document.getElementById('lb-img'); if (!lb||!img) return; img.src=src; lb.style.display='flex'; }
+function closeLightbox() { const lb=document.getElementById('lightbox'); if (lb) lb.style.display='none'; }
 
-function openLightbox(src) {
-  const lb = document.getElementById('lightbox');
-  const img = document.getElementById('lb-img');
-  if (!lb || !img) return;
-  img.src = src;
-  lb.style.display = 'flex';
+// ── NOTIF ──
+function showNotif(msg, isError=false) {
+  let n = document.getElementById('vv-notif');
+  if (!n) { n=document.createElement('div'); n.id='vv-notif'; document.body.appendChild(n); }
+  n.textContent = msg;
+  n.style.borderColor = isError ? 'rgba(255,59,48,0.4)' : 'rgba(52,199,89,0.3)';
+  n.classList.add('show');
+  clearTimeout(n._t);
+  n._t = setTimeout(() => n.classList.remove('show'), 3000);
 }
 
-function closeLightbox() {
-  const lb = document.getElementById('lightbox');
-  if (lb) lb.style.display = 'none';
-}
+// ── INNER CIRCLE ──
+var circleTab = 'pending';
 
-function lightboxNav(dir) {
-  // Extinde cu array de imagini dacă ai nevoie
-}
-
-// ============================================================
-// 16. NOTIFICĂRI
-// ============================================================
-
-function showNotif(msg, isError = false) {
-  let notif = document.getElementById('vv-notif');
-  if (!notif) {
-    notif = document.createElement('div');
-    notif.id = 'vv-notif';
-    notif.style.cssText = 'position:fixed;bottom:30px;left:50%;transform:translateX(-50%);background:rgba(20,20,22,0.96);border:1px solid rgba(255,255,255,0.12);border-radius:12px;padding:12px 20px;font-size:14px;color:#fff;z-index:99999;transition:opacity 0.3s;white-space:nowrap;font-family:inherit';
-    document.body.appendChild(notif);
+function switchCircleTab(tab) {
+  circleTab = tab;
+  const btnP = document.getElementById('circle-tab-pending');
+  const btnA = document.getElementById('circle-tab-active');
+  const listP = document.getElementById('circle-pending-list');
+  const listA = document.getElementById('circle-active-list');
+  if (tab === 'pending') {
+    if (btnP) { btnP.style.background='#fff'; btnP.style.color='#000'; }
+    if (btnA) { btnA.style.background='transparent'; btnA.style.color='rgba(255,255,255,0.4)'; }
+    if (listP) listP.style.display='block';
+    if (listA) listA.style.display='none';
+    loadCirclePending();
+  } else {
+    if (btnA) { btnA.style.background='#fff'; btnA.style.color='#000'; }
+    if (btnP) { btnP.style.background='transparent'; btnP.style.color='rgba(255,255,255,0.4)'; }
+    if (listP) listP.style.display='none';
+    if (listA) listA.style.display='block';
+    loadCircleActive();
   }
-  notif.textContent = msg;
-  notif.style.borderColor = isError ? 'rgba(255,59,48,0.4)' : 'rgba(52,199,89,0.3)';
-  notif.style.opacity = '1';
-  clearTimeout(notif._timer);
-  notif._timer = setTimeout(() => { notif.style.opacity = '0'; }, 3000);
+}
+
+function genVVCoreId() {
+  const c = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  let p1='', p2='';
+  for (let i=0;i<4;i++) p1 += c[Math.floor(Math.random()*c.length)];
+  for (let i=0;i<2;i++) p2 += c[Math.floor(Math.random()*c.length)];
+  return 'VV\u00B7CORE\u00B7' + p1 + '-' + p2;
+}
+
+function loadCirclePending() {
+  const list = document.getElementById('circle-pending-list');
+  if (!list) return;
+  if (_pendingUnsub) { _pendingUnsub(); _pendingUnsub=null; }
+  list.innerHTML = '<div style="text-align:center;padding:20px;color:rgba(255,255,255,0.3);font-size:13px">Se încarcă...</div>';
+
+  _pendingUnsub = db.collection('contributors').where('status','==','pending')
+    .onSnapshot(snap => {
+      const badge = document.getElementById('badge-circle');
+      if (badge) { badge.textContent=snap.size; badge.style.display=snap.size>0?'inline-block':'none'; }
+      const stats = document.getElementById('circle-stats');
+      if (stats) stats.textContent = snap.size + ' pending';
+      if (snap.empty) { list.innerHTML='<div style="text-align:center;padding:30px;color:rgba(255,255,255,0.25);font-size:13px">Nicio cerere în așteptare. 🎉</div>'; return; }
+      list.innerHTML = '';
+      snap.forEach(doc => {
+        const d = doc.data();
+        const card = document.createElement('div');
+        card.className = 'circle-card';
+        const dateStr = d.submittedAt ? d.submittedAt.toDate().toLocaleString('ro-RO') : '—';
+        const docId = doc.id;
+        const alias = (d.alias||'INSIDER').replace(/'/g,"\\'");
+        card.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px"><div><div style="font-size:15px;font-weight:800;color:#fff;margin-bottom:3px">${d.alias||'INSIDER'}</div><div style="font-size:10px;color:rgba(255,255,255,0.3);font-family:monospace">${docId.substring(0,16)}...</div></div><div style="font-size:10px;color:rgba(212,175,55,0.6);text-align:right"><div style="font-weight:700">⏳ PENDING</div><div style="margin-top:2px;color:rgba(255,255,255,0.25)">${dateStr}</div></div></div><div style="display:flex;gap:8px"><button onclick="deployCircle('${docId}','${alias}',event)" style="flex:1;padding:12px;background:rgba(212,175,55,0.15);border:1px solid rgba(212,175,55,0.35);border-radius:10px;color:#D4AF37;font-weight:800;font-size:12px;cursor:pointer;min-height:44px;font-family:inherit">⬡ VERIFY & DEPLOY</button><button onclick="rejectCircle('${docId}')" style="padding:12px 14px;background:rgba(255,59,48,0.08);border:1px solid rgba(255,59,48,0.2);border-radius:10px;color:#ff3b30;font-weight:700;font-size:12px;cursor:pointer;min-height:44px;font-family:inherit">✕</button></div>`;
+        list.appendChild(card);
+      });
+    }, err => { list.innerHTML='<div style="color:#ff3b30;padding:16px;font-size:12px">Eroare: ' + err.message + '</div>'; });
+}
+
+function loadCircleActive() {
+  const list = document.getElementById('circle-active-list');
+  if (!list) return;
+  if (_activeUnsub) { _activeUnsub(); _activeUnsub=null; }
+  _activeUnsub = db.collection('contributors').where('status','==','active')
+    .onSnapshot(snap => {
+      const stats = document.getElementById('circle-stats');
+      if (stats) stats.textContent = snap.size + ' activi / 100';
+      if (snap.empty) { list.innerHTML='<div style="text-align:center;padding:30px;color:rgba(255,255,255,0.25);font-size:13px">Niciun contributor activ încă.</div>'; return; }
+      list.innerHTML = '';
+      snap.forEach(doc => {
+        const d = doc.data();
+        const dateStr = d.activatedAt ? d.activatedAt.toDate().toLocaleDateString('ro-RO') : '—';
+        const isOnline = d.lastActive && (d.lastActive.toDate() > new Date(Date.now()-5*60*1000));
+        const card = document.createElement('div');
+        card.className = 'circle-active-card';
+        card.innerHTML = `<div style="display:flex;align-items:center;gap:10px"><div style="width:8px;height:8px;border-radius:50%;background:${isOnline?'#34c759':'rgba(255,255,255,0.2)'};${isOnline?'box-shadow:0 0 6px rgba(52,199,89,0.5)':''}"></div><div><div style="font-size:13px;font-weight:700;color:#fff">${d.alias||'INSIDER'}</div><div style="font-size:11px;font-family:monospace;color:#D4AF37;margin-top:2px">${d.vvCoreId||'—'}</div></div></div><div style="text-align:right"><div style="font-size:10px;color:rgba(52,199,89,0.6);font-weight:700">ACTIV</div><div style="font-size:10px;color:rgba(255,255,255,0.25);margin-top:2px">${dateStr}</div></div>`;
+        list.appendChild(card);
+      });
+    }, err => { list.innerHTML='<div style="color:#ff3b30;padding:16px;font-size:12px">Eroare: ' + err.message + '</div>'; });
+}
+
+async function deployCircle(uid, alias, event) {
+  if (!confirm('Ai verificat plata de 29 lei de la ' + alias + ' în Salt Bank?\n\nApasă OK pentru a activa identitatea VV·CORE.')) return;
+  const btn = event.currentTarget;
+  btn.textContent='SE DEPLOYEAZĂ...'; btn.style.opacity='0.6'; btn.style.pointerEvents='none';
+  try {
+    let newId = genVVCoreId();
+    const existing = await db.collection('contributors').where('vvCoreId','==',newId).get();
+    if (!existing.empty) newId = genVVCoreId();
+    await db.collection('contributors').doc(uid).update({ status:'active', vvCoreId:newId, activatedAt: firebase.firestore.FieldValue.serverTimestamp(), activatedBy:'CEO' });
+    await db.collection('inbox').add({ to:uid, type:'circle_activated', message:'⬡ Identitatea ta VV·CORE a fost activată: ' + newId + '. Bine ai venit în nucleul Universului VV.', vvCoreId:newId, read:false, createdAt: firebase.firestore.FieldValue.serverTimestamp() });
+    logVVhi('CIRCLE_DEPLOY', { uid, alias, vvCoreId:newId });
+    logCEOAction('CIRCLE_DEPLOY', alias + ' → ' + newId);
+    showNotif('✅ ' + newId + ' deploiat pentru ' + alias + '!');
+  } catch(e) {
+    showNotif('Eroare: ' + e.message, true);
+    btn.textContent='⬡ VERIFY & DEPLOY'; btn.style.opacity='1'; btn.style.pointerEvents='auto';
+  }
+}
+
+async function rejectCircle(uid) {
+  if (!confirm('Respingi această cerere? Returnează banii manual din Salt Bank.')) return;
+  try {
+    await db.collection('contributors').doc(uid).update({ status:'rejected', rejectedAt: firebase.firestore.FieldValue.serverTimestamp() });
+    await db.collection('inbox').add({ to:uid, type:'circle_rejected', message:'Cererea ta pentru VV Inner Circle nu a putut fi verificată. Contactează VV Team.', read:false, createdAt: firebase.firestore.FieldValue.serverTimestamp() });
+    logCEOAction('CIRCLE_REJECT', uid);
+    showNotif('Cerere respinsă.');
+  } catch(e) { showNotif('Eroare: ' + e.message, true); }
 }
