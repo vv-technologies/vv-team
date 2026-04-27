@@ -1,219 +1,1387 @@
 <!DOCTYPE html>
 <html lang="ro">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<meta name="theme-color" content="#050505">
-<title>VV TEAM | CEO PANEL</title>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-<script>
-firebase.initializeApp({
-  apiKey:"AIzaSyDGv4kEClO0RHCLvXVLOT-vyPHw6bsxYVc",
-  authDomain:"vv-ep-beta.firebaseapp.com",
-  projectId:"vv-ep-beta",
-  storageBucket:"vv-ep-beta.firebasestorage.app",
-  messagingSenderId:"641117018598",
-  appId:"1:641117018598:web:7cd522ef48db46ad58de27"
-});
-</script>
-<link rel="stylesheet" href="vv-team-style.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#050505">
+  <title>VV TEAM | CEO PANEL</title>
+
+  <!-- Firebase v8 Compat -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+
+  <script>
+    firebase.initializeApp({
+      apiKey: "AIzaSyDGv4kEClO0RHCLvXVLOT-vyPHw6bsxYVc",
+      authDomain: "vv-ep-beta.firebaseapp.com",
+      projectId: "vv-ep-beta",
+      storageBucket: "vv-ep-beta.firebasestorage.app",
+      messagingSenderId: "641117018598",
+      appId: "1:641117018598:web:7cd522ef48db46ad58de27"
+    });
+  </script>
+
+  <style>
+:root { 
+    --bg: #050505; 
+    --panel: #0a0a0c;
+    --glass-bg: rgba(255, 255, 255, 0.03);
+    --glass-border: rgba(255, 255, 255, 0.08);
+    --vv-blue: #0A84FF;
+    --gold: #D4AF37; 
+    --safe-green: #34c759;
+    --danger: #ff3b30;
+    --text-main: #ffffff;
+    --text-muted: #8e8e93;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+
+body { 
+    background: var(--bg); 
+    color: var(--text-main); 
+    min-height: 100vh; 
+    display: flex;
+    overflow: hidden;
+}
+
+/* ─── FIX CRITIC: app-container umple tot spatiul ─── */
+#app-container {
+    display: flex;
+    flex: 1;
+    min-height: 100vh;
+    min-width: 0;
+    overflow: hidden;
+}
+
+/* ============ LOGIN SCREEN ============ */
+#login-screen { 
+    position: fixed; 
+    inset: 0; 
+    background: var(--bg); 
+    z-index: 99999; 
+    display: flex; 
+    flex-direction: column; 
+    justify-content: center; 
+    align-items: center; 
+    transition: opacity 0.5s;
+    padding: 20px;
+}
+#login-screen.hidden {
+    opacity: 0;
+    pointer-events: none;
+}
+.logo-box { font-size: 40px; font-weight: 900; letter-spacing: 5px; color: #fff; margin-bottom: 10px; }
+.logo-sub { font-size: 12px; color: var(--text-muted); letter-spacing: 4px; margin-bottom: 40px; text-transform: uppercase; }
+.login-input { 
+    background: rgba(255,255,255,0.06) !important; 
+    border: 1px solid rgba(255,255,255,0.12); 
+    padding: 18px 25px; 
+    border-radius: 12px; 
+    color: #fff !important; 
+    font-size: 16px; 
+    text-align: center; 
+    letter-spacing: 3px; 
+    outline: none; 
+    margin-bottom: 20px; 
+    width: 100%;
+    max-width: 320px;
+    transition: 0.3s;
+    -webkit-appearance: none;
+    appearance: none;
+}
+.login-input:focus { border-color: rgba(255,255,255,0.6); background: rgba(255,255,255,0.08) !important; }
+.login-input:-webkit-autofill,
+.login-input:-webkit-autofill:hover,
+.login-input:-webkit-autofill:focus,
+.login-input:-webkit-autofill:active {
+    -webkit-box-shadow: 0 0 0 100px rgba(30,30,40,0.98) inset !important;
+    -webkit-text-fill-color: #ffffff !important;
+    caret-color: #ffffff;
+    border: 1px solid rgba(255,255,255,0.2) !important;
+    border-radius: 12px !important;
+}
+.login-btn { 
+    background: #fff; 
+    color: #000; 
+    border: none; 
+    padding: 18px; 
+    width: 100%;
+    max-width: 320px;
+    border-radius: 12px; 
+    font-weight: 700; 
+    cursor: pointer; 
+    text-transform: uppercase; 
+    letter-spacing: 1px; 
+    transition: 0.2s; 
+}
+.login-btn:active { transform: scale(0.98); }
+
+/* ============ LIGHTBOX ============ */
+#lightbox { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 100000; justify-content: center; align-items: center; backdrop-filter: blur(10px); }
+.lb-close { position: absolute; top: 20px; right: 25px; color: #fff; font-size: 30px; cursor: pointer; transition: 0.2s; z-index: 100001; }
+.lb-close:hover { color: var(--danger); }
+.lb-nav { position: absolute; top: 50%; transform: translateY(-50%); color: rgba(255,255,255,0.6); font-size: 35px; cursor: pointer; padding: 15px; transition: 0.3s; z-index: 100001; }
+.lb-nav:hover { color: #fff; }
+.lb-prev { left: 10px; }
+.lb-next { right: 10px; }
+#lb-img { max-width: 90%; max-height: 85%; border-radius: 12px; box-shadow: 0 10px 40px rgba(0,0,0,0.8); object-fit: contain; }
+
+/* ============ SIDEBAR ============ */
+.sidebar { 
+    width: 250px; 
+    min-width: 250px;
+    background: var(--panel); 
+    border-right: 1px solid var(--glass-border); 
+    display: flex; 
+    flex-direction: column; 
+    padding: 30px 0; 
+    z-index: 10;
+    overflow-y: auto;
+    flex-shrink: 0;
+}
+.sidebar-header { padding: 0 25px; margin-bottom: 20px; }
+.sidebar-title { font-size: 20px; font-weight: 800; letter-spacing: 2px; margin-bottom: 5px; }
+.sidebar-subtitle { font-size: 10px; color: var(--gold); letter-spacing: 2px; text-transform: uppercase; font-weight: 600; }
+
+.system-money-box { padding: 0 25px; margin-bottom: 25px; }
+.money-label { font-size: 10px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 5px; font-weight: 600; }
+.money-value { font-size: 16px; color: var(--safe-green); font-weight: 700; font-family: monospace; }
+
+.nav-item { padding: 16px 25px; display: flex; align-items: center; gap: 12px; color: var(--text-muted); cursor: pointer; font-size: 13px; font-weight: 500; transition: 0.3s; border-left: 3px solid transparent; }
+.nav-item:hover { background: var(--glass-bg); color: #fff; }
+.nav-item.active { background: rgba(255,255,255,0.05); color: #fff; border-left-color: var(--vv-blue); }
+.nav-item i { width: 18px; text-align: center; font-size: 15px; }
+.nav-badge { background: var(--danger); color: #fff; font-size: 10px; font-weight: 800; padding: 2px 8px; border-radius: 10px; margin-left: auto; display: none; }
+
+/* ============ MAIN CONTENT ============ */
+.main-content { 
+    flex: 1; 
+    padding: 35px 40px; 
+    overflow-y: auto; 
+    background: var(--bg); 
+    position: relative;
+    min-width: 0;
+    height: 100vh;
+}
+.section { display: none; animation: fadeIn 0.4s; }
+.section.active { display: block; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+.section-header-row { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 30px; flex-wrap: wrap; gap: 15px; }
+.section-title { font-size: 26px; font-weight: 700; margin-bottom: 8px; letter-spacing: 0.5px; }
+.section-desc { font-size: 13px; color: var(--text-muted); }
+
+.btn-delete-all { background: rgba(255,59,48,0.1); color: var(--danger); border: 1px solid rgba(255,59,48,0.3); padding: 12px 20px; border-radius: 8px; font-weight: 800; font-size: 11px; cursor: pointer; text-transform: uppercase; letter-spacing: 1px; transition: 0.3s; display: flex; align-items: center; gap: 8px; white-space: nowrap; }
+.btn-delete-all:hover { background: var(--danger); color: #fff; }
+
+/* ============ GRID ============ */
+.grid-container { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; }
+.photo-card { background: var(--glass-bg); border: 1px solid var(--glass-border); border-radius: 16px; overflow: hidden; display: flex; flex-direction: column; transition: 0.3s; }
+.photo-card:hover { transform: translateY(-3px); box-shadow: 0 8px 25px rgba(0,0,0,0.5); border-color: rgba(255,255,255,0.15); }
+.photo-img { width: 100%; height: 200px; object-fit: cover; background: #111; cursor: zoom-in; }
+.photo-info { padding: 16px; }
+.photo-msg { font-size: 13px; color: #fff; margin-bottom: 10px; line-height: 1.5; }
+.photo-meta { font-size: 11px; color: var(--text-muted); display: flex; justify-content: space-between; text-transform: uppercase; letter-spacing: 1px; }
+.flag-badge { background: rgba(255,59,48,0.1); color: var(--danger); padding: 4px 8px; border-radius: 6px; font-size: 10px; font-weight: 700; border: 1px solid rgba(255,59,48,0.3); margin-bottom: 10px; display: inline-block; }
+
+/* ============ TABLE ============ */
+.vv-table { width: 100%; border-collapse: collapse; background: var(--glass-bg); border-radius: 16px; overflow: hidden; border: 1px solid var(--glass-border); }
+.vv-table th { background: rgba(255,255,255,0.02); padding: 16px; text-align: left; font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 2px; border-bottom: 1px solid var(--glass-border); }
+.vv-table td { padding: 16px; border-bottom: 1px solid rgba(255,255,255,0.02); font-size: 13px; font-weight: 500; overflow-wrap: break-word; word-break: break-word; }
+.vv-table tr:hover td { background: rgba(255,255,255,0.02); }
+.rank-gold { color: var(--gold); font-weight: 900; font-size: 16px; }
+.badge-onyx { background: rgba(10, 132, 255, 0.1); color: var(--vv-blue); border: 1px solid rgba(10, 132, 255, 0.3); padding: 5px 10px; border-radius: 8px; font-size: 11px; font-weight: 700; letter-spacing: 1px; }
+
+/* ============ BUTTONS ============ */
+.action-row { display: flex; gap: 10px; margin-top: 15px; flex-wrap: wrap; }
+.btn-approve { flex: 1; min-width: 100px; padding: 12px; border: none; border-radius: 8px; background: #fff; color: #000; font-weight: 700; cursor: pointer; transition: 0.2s; font-size: 12px; text-transform: uppercase; }
+.btn-reject { flex: 1; min-width: 100px; padding: 12px; border: 1px solid var(--danger); border-radius: 8px; background: rgba(255,59,48,0.1); color: var(--danger); font-weight: 700; cursor: pointer; transition: 0.2s; font-size: 12px; text-transform: uppercase; }
+.btn-reply { padding: 8px 14px; border: 1px solid var(--vv-blue); border-radius: 8px; background: rgba(10, 132, 255, 0.1); color: var(--vv-blue); font-weight: 700; cursor: pointer; font-size: 11px; text-transform: uppercase; }
+
+/* ============ KEYS ============ */
+.key-generator-card { background: var(--glass-bg); border: 1px solid var(--glass-border); padding: 25px; border-radius: 16px; max-width: 500px; }
+.btn-primary { background: #fff; color: #000; border: none; padding: 14px 22px; border-radius: 10px; font-weight: 700; cursor: pointer; text-transform: uppercase; letter-spacing: 1px; transition: 0.2s; display: flex; align-items: center; gap: 8px; justify-content: center; width: 100%; }
+.btn-primary:active { transform: scale(0.98); }
+#keys-list { margin-top: 25px; display: flex; flex-direction: column; gap: 10px; }
+.key-item { display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.02); padding: 14px 18px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.05); font-family: monospace; font-size: 15px; letter-spacing: 2px; flex-wrap: wrap; gap: 10px; }
+.key-status { font-size: 11px; font-weight: 700; color: var(--safe-green); letter-spacing: 1px; font-family: -apple-system, sans-serif; }
+
+/* ============ RESPONSIVE TABLETE MICI ============ */
+@media (max-width: 768px) {
+    body { flex-direction: column; overflow-y: auto; overflow-x: hidden; height: auto; }
+    #app-container { flex-direction: column; overflow: visible; height: auto; min-height: 100vh; }
+    .sidebar { 
+        width: 100%; min-width: unset; flex-direction: row; flex-wrap: wrap;
+        padding: 15px 12px; border-right: none; border-bottom: 1px solid var(--glass-border);
+        gap: 6px; overflow-y: visible; height: auto;
+    }
+    .sidebar-header { width: 100%; padding: 0 5px 12px 5px; margin-bottom: 8px; border-bottom: 1px solid var(--glass-border); display: flex; justify-content: space-between; align-items: center; }
+    .sidebar-title { font-size: 18px; }
+    .system-money-box { padding: 0 5px; margin-bottom: 8px; display: flex; align-items: center; gap: 10px; }
+    .money-label { margin-bottom: 0; }
+    .nav-item { padding: 10px 12px; border-radius: 10px; border-left: none; font-size: 12px; flex: 1; min-width: 48px; justify-content: center; text-align: center; gap: 6px; }
+    .nav-item.active { background: rgba(255,255,255,0.08); border-left: none; border-bottom: 2px solid var(--vv-blue); }
+    .nav-item span:not(.nav-badge) { display: none; }
+    .main-content { padding: 20px 15px 40px; height: auto; flex: none; overflow-y: visible; }
+    .section-header-row { flex-direction: column; gap: 12px; margin-bottom: 20px; }
+    .btn-delete-all { width: 100%; justify-content: center; }
+    .grid-container { grid-template-columns: 1fr; gap: 15px; }
+    .vv-table { font-size: 12px; }
+    .vv-table th { padding: 10px 8px; font-size: 10px; }
+    .vv-table td { padding: 10px 8px; font-size: 12px; }
+    .key-generator-card { max-width: 100%; }
+    .section-title { font-size: 18px; }
+}
+
+/* ============ TELEFOANE MICI ============ */
+@media (max-width: 480px) {
+    .nav-item { min-width: 44px; font-size: 10px; padding: 10px 8px; }
+    .action-row { flex-direction: column; }
+    .btn-approve, .btn-reject { min-width: unset; }
+}
+
+/* ============ TABLETE MARI (768–1024) ============ */
+@media (min-width: 768px) {
+    .nav-item span:not(.nav-badge) { display: inline; }
+}
+
+@media (min-width: 768px) and (max-width: 1024px) {
+    body { flex-direction: row; overflow: hidden; }
+    #app-container { flex-direction: row; }
+    .sidebar { width: 220px; min-width: 220px; flex-direction: column; flex-wrap: nowrap; height: 100vh; overflow-y: auto; border-right: 1px solid var(--glass-border); padding: 30px 0; }
+    .sidebar-header { width: auto; padding: 0 20px 15px; border-bottom: 1px solid var(--glass-border); margin-bottom: 15px; display: block; }
+    .system-money-box { width: auto; padding: 0 20px 15px; display: block; margin-bottom: 10px; }
+    .money-label { margin-bottom: 4px; }
+    .nav-item { justify-content: flex-start; text-align: left; padding: 14px 20px; flex: none; min-width: unset; border-radius: 0; border-left: 3px solid transparent; border-bottom: none; width: 100%; }
+    .nav-item.active { border-left-color: var(--vv-blue); border-bottom: none; }
+    .main-content { flex: 1; padding: 30px 30px; height: 100vh; overflow-y: auto; }
+    .grid-container { grid-template-columns: repeat(2, 1fr); gap: 18px; }
+}
+
+/* ============ DESKTOP (1024+) ============ */
+@media (min-width: 1024px) {
+    body { flex-direction: row; overflow: hidden; }
+    #app-container { flex-direction: row; }
+    .sidebar { width: 240px; min-width: 240px; flex-direction: column; flex-wrap: nowrap; height: 100vh; overflow-y: auto; border-right: 1px solid var(--glass-border); padding: 30px 0; }
+    .sidebar-header { width: auto; padding: 0 25px 20px; margin-bottom: 10px; display: block; }
+    .system-money-box { width: auto; padding: 0 25px 20px; margin-bottom: 10px; display: block; }
+    .nav-item { justify-content: flex-start; text-align: left; padding: 16px 25px; flex: none; min-width: unset; border-radius: 0; border-left: 3px solid transparent; border-bottom: none; width: 100%; }
+    .nav-item.active { border-left-color: var(--vv-blue); border-bottom: none; }
+    .main-content { flex: 1; padding: 40px 50px; height: 100vh; overflow-y: auto; }
+    .section-header-row { flex-direction: row; flex-wrap: nowrap; align-items: flex-start; }
+    .grid-container { grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); }
+    .vv-table td { max-width: 300px; }
+}
+
+/* ============ CEO EXECUTIVE ============ */
+.logout-btn { color: rgba(255, 59, 48, 0.6) !important; border-top: 1px solid rgba(255, 59, 48, 0.1); margin-top: 8px; }
+.logout-btn:hover { color: #ff3b30 !important; background: rgba(255, 59, 48, 0.08) !important; }
+
+button, .nav-item, .btn-approve, .btn-reject, .btn-reply, .btn-primary, .login-btn, .btn-delete-all {
+    min-height: 44px !important;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+}
+
+.main-content { padding-bottom: calc(40px + env(safe-area-inset-bottom, 0px)) !important; }
+#login-screen { padding-top: calc(40px + env(safe-area-inset-top, 0px)); padding-bottom: calc(40px + env(safe-area-inset-bottom, 0px)); }
+.sidebar { padding-top: calc(30px + env(safe-area-inset-top, 0px)); }
+.photo-img { -webkit-user-select: none; user-select: none; }
+
+/* CEO Map */
+.ceo-popup .leaflet-popup-content-wrapper { background: #0a0a0c !important; border: 1px solid rgba(255,255,255,0.1) !important; border-radius: 12px !important; box-shadow: 0 8px 32px rgba(0,0,0,0.6) !important; color: #fff !important; padding: 0 !important; }
+.ceo-popup .leaflet-popup-content { margin: 0 !important; }
+.ceo-popup .leaflet-popup-tip { background: #0a0a0c !important; }
+.ceo-popup .leaflet-popup-close-button { color: rgba(255,255,255,0.4) !important; }
+
+/* SCAN LINE */
+.scan-line { position: fixed; top: 0; left: 0; width: 100%; height: 2px; background: var(--gold); box-shadow: 0 0 15px var(--gold); animation: scan 4s linear infinite; z-index: 200; opacity: 0.4; pointer-events: none; }
+@keyframes scan { from { top: 0; } to { top: 100%; } }
+
+/* TABS */
+.btn-tab { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: var(--text-muted); padding: 8px 16px; border-radius: 8px; cursor: pointer; font-size: 12px; font-weight: 600; font-family: inherit; transition: 0.2s; }
+.btn-tab.active { background: rgba(10,132,255,0.15); border-color: rgba(10,132,255,0.4); color: var(--vv-blue); }
+.btn-tab:hover { color: #fff; }
+
+/* CARDS */
+.contract-card { background: var(--glass-bg); border: 1px solid var(--glass-border); border-radius: 12px; padding: 18px; margin-bottom: 12px; }
+.feedback-card { background: var(--glass-bg); border: 1px solid var(--glass-border); border-radius: 12px; padding: 18px; margin-bottom: 12px; }
+.feedback-card.bug { border-color: rgba(255,59,48,0.2); }
+.talent-card { background: var(--glass-bg); border: 1px solid var(--glass-border); border-radius: 12px; padding: 16px; margin-bottom: 10px; display: flex; align-items: center; gap: 15px; flex-wrap: wrap; }
+.rank-select { background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12); color: #fff; padding: 8px 12px; border-radius: 8px; font-size: 12px; outline: none; cursor: pointer; }
+.vvhi-stat-card { background: var(--glass-bg); border: 1px solid var(--glass-border); border-radius: 12px; padding: 18px; text-align: center; }
+.vvhi-stat-val { font-size: 28px; font-weight: 800; color: var(--gold); }
+.vvhi-stat-lbl { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; margin-top: 5px; }
+  </style>
 </head>
 <body>
 
+  <div class="scan-line"></div>
 
-
-<!-- LOGIN -->
-<div id="login-screen">
-  <div class="logo-box">VV</div>
-  <div class="logo-sub">CEO COMMAND CENTER</div>
-  <input class="login-input" id="login-email" type="email" placeholder="Email CEO" autocomplete="username">
-  <input class="login-input" id="login-pass" type="password" placeholder="Parolă" autocomplete="current-password"
-    onkeydown="if(event.key==='Enter') handleLogin(document.getElementById('login-email').value, document.getElementById('login-pass').value)">
-  <button class="login-btn" ontouchend="handleLogin(document.getElementById('login-email').value, document.getElementById('login-pass').value)" onclick="handleLogin(document.getElementById('login-email').value, document.getElementById('login-pass').value)">INTRĂ</button>
-</div>
-
-<!-- APP SHELL -->
-<div id="app-shell">
-
-  <!-- SIDEBAR — iconite mici, se deschide la tap pe ☰ -->
-  <div class="sidebar" id="sidebar">
-    <button class="sidebar-toggle" onclick="toggleSidebar()">☰</button>
-
-    <div class="nav-item active" onclick="showSection('missions')" id="nav-missions">
-      <i>🎯</i> <span>Misiuni</span>
-      <span class="nav-badge" id="badge-missions"></span>
-    </div>
-    <div class="nav-item" onclick="showSection('contracts')" id="nav-contracts">
-      <i>📋</i> <span>Contracte</span>
-      <span class="nav-badge" id="badge-contracts"></span>
-    </div>
-    <div class="nav-item" onclick="showSection('feedback')" id="nav-feedback">
-      <i>💬</i> <span>Feedback</span>
-      <span class="nav-badge" id="badge-feedback"></span>
-    </div>
-    <div class="nav-item" onclick="showSection('talent')" id="nav-talent">
-      <i>👥</i> <span>Talent Pool</span>
-    </div>
-    <div class="nav-item" onclick="showSection('leaderboard')" id="nav-leaderboard">
-      <i>🏆</i> <span>Leaderboard</span>
-    </div>
-    <div class="nav-item" onclick="showSection('keys')" id="nav-keys">
-      <i>🔑</i> <span>Chei Beta</span>
-    </div>
-    <div class="nav-item" onclick="showSection('config')" id="nav-config">
-      <i>⚙️</i> <span>Config Live</span>
-    </div>
-    <div class="nav-item" onclick="showSection('audit')" id="nav-audit">
-      <i>📜</i> <span>Audit Log</span>
-    </div>
-    <div class="nav-item" onclick="showSection('map')" id="nav-map">
-      <i>🗺</i> <span>Harta Misiuni</span>
-    </div>
-    <div class="nav-item" onclick="showSection('circle')" id="nav-circle">
-      <i>⬡</i> <span>Inner Circle</span>
-      <span class="nav-badge" id="badge-circle" style="background:#D4AF37;color:#000">0</span>
-    </div>
-    <div class="nav-item" onclick="showSection('vvhi')" id="nav-vvhi">
-      <i>🤖</i> <span>VVhi Shadow</span>
-    </div>
-    <div class="nav-item logout-item" onclick="handleLogout()">
-      <i>🚪</i> <span>Deconectare</span>
-    </div>
+  <!-- LOGIN SCREEN — singurul, în afara app-container -->
+  <div id="login-screen">
+    <div class="logo-box">VV</div>
+    <div class="logo-sub">CEO COMMAND CENTER</div>
+    <input class="login-input" id="login-email" type="email"
+      placeholder="Email CEO" autocomplete="username">
+    <input class="login-input" id="login-pass" type="password"
+      placeholder="Parolă" autocomplete="current-password"
+      onkeydown="if(event.key==='Enter') handleLogin(document.getElementById('login-email').value, document.getElementById('login-pass').value)">
+    <button class="login-btn"
+      onclick="handleLogin(document.getElementById('login-email').value, document.getElementById('login-pass').value)">
+      INTRĂ
+    </button>
   </div>
 
-  <!-- MAIN CONTENT -->
-  <div class="main-content" id="main-content">
+  <!-- APP — sidebar + main, injectate după login -->
+  <div id="app-container"></div>
 
-    <!-- TOP BAR -->
-    <div class="top-bar">
-      <div class="top-bar-title" id="section-heading">Galerie Misiuni</div>
-      <div class="coins-badge" id="total-coins">— VVC</div>
+  <!-- LIGHTBOX — global -->
+  <div id="lightbox" onclick="closeLightbox()">
+    <span class="lb-close">✕</span>
+    <span class="lb-nav lb-prev" onclick="event.stopPropagation();lightboxNav(-1)">‹</span>
+    <img id="lb-img" src="" alt="">
+    <span class="lb-nav lb-next" onclick="event.stopPropagation();lightboxNav(1)">›</span>
+  </div>
+
+  <script>
+// ============================================================
+// VV-TEAM CEO Panel — Fixed Version
+// ============================================================
+
+const db  = firebase.firestore();
+const auth = firebase.auth();
+
+const COIN_REWARD_DEFAULT = 10;
+const RANKS = ['Neofit', 'Explorer', 'Trainer', 'Master', 'Fondator'];
+
+let currentCEO     = null;
+let currentSection = 'missions';
+let lightboxImages = [];
+let lightboxIndex  = 0;
+
+// ── onSnapshot unsubscribe handles ──
+let _circlePendingUnsub = null;
+let _circleActiveUnsub  = null;
+
+// ============================================================
+// 1. AUTH
+// ============================================================
+
+firebase.auth().setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(console.error);
+
+auth.onAuthStateChanged(async (user) => {
+  if (!user) {
+    document.getElementById('login-screen').classList.remove('hidden');
+    return;
+  }
+  try {
+    const userDoc = await db.collection('users').doc(user.uid).get();
+    if (userDoc.exists && userDoc.data().role === 'ceo') {
+      currentCEO = { uid: user.uid, ...userDoc.data() };
+      // ── FIX: ascunde login screen înainte de a construi interfața ──
+      document.getElementById('login-screen').classList.add('hidden');
+      buildInterface();
+      initDashboard();
+    } else {
+      console.warn('Rol insuficient.');
+      document.getElementById('login-screen').classList.remove('hidden');
+    }
+  } catch (e) {
+    console.error('Auth check error:', e);
+    document.getElementById('login-screen').classList.remove('hidden');
+  }
+});
+
+async function handleLogin(email, password) {
+  const btn = document.querySelector('#login-screen .login-btn');
+  if (btn) { btn.textContent = 'SE VERIFICĂ...'; btn.disabled = true; }
+  try {
+    await auth.signInWithEmailAndPassword(email, password);
+  } catch (error) {
+    console.error('Login error:', error.message);
+    if (btn) { btn.textContent = 'ACCES REFUZAT'; btn.disabled = false; setTimeout(() => { btn.textContent = 'INTRĂ'; }, 2000); }
+  }
+}
+
+function handleLogout() {
+  if (_circlePendingUnsub) { _circlePendingUnsub(); _circlePendingUnsub = null; }
+  if (_circleActiveUnsub)  { _circleActiveUnsub();  _circleActiveUnsub  = null; }
+  auth.signOut().then(() => { window.location.href = 'index.html'; });
+}
+
+// ============================================================
+// 2. BUILD INTERFACE
+// ============================================================
+
+function buildInterface() {
+  const app = document.getElementById('app-container');
+  if (!app) return;
+
+  app.innerHTML = `
+    <!-- SIDEBAR -->
+    <div class="sidebar" id="sidebar">
+      <div class="sidebar-header">
+        <div class="sidebar-title">VV TEAM</div>
+        <div class="sidebar-subtitle">CEO PANEL</div>
+      </div>
+      <div class="system-money-box">
+        <div class="money-label">VV Coins în sistem</div>
+        <div class="money-value" id="total-coins">— VVC</div>
+      </div>
+      <div class="nav-item active" onclick="showSection('missions')" id="nav-missions">
+        <i>🎯</i> <span>Misiuni</span>
+        <span class="nav-badge" id="badge-missions"></span>
+      </div>
+      <div class="nav-item" onclick="showSection('contracts')" id="nav-contracts">
+        <i>📋</i> <span>Contracte</span>
+        <span class="nav-badge" id="badge-contracts"></span>
+      </div>
+      <div class="nav-item" onclick="showSection('feedback')" id="nav-feedback">
+        <i>💬</i> <span>Feedback</span>
+        <span class="nav-badge" id="badge-feedback"></span>
+      </div>
+      <div class="nav-item" onclick="showSection('talent')" id="nav-talent">
+        <i>👥</i> <span>Talent Pool</span>
+      </div>
+      <div class="nav-item" onclick="showSection('leaderboard')" id="nav-leaderboard">
+        <i>🏆</i> <span>Leaderboard</span>
+      </div>
+      <div class="nav-item" onclick="showSection('keys')" id="nav-keys">
+        <i>🔑</i> <span>Chei Beta</span>
+      </div>
+      <div class="nav-item" onclick="showSection('config')" id="nav-config">
+        <i>⚙️</i> <span>Config Live</span>
+      </div>
+      <div class="nav-item" onclick="showSection('audit')" id="nav-audit">
+        <i>📜</i> <span>Audit Log</span>
+      </div>
+      <div class="nav-item" onclick="showSection('map')" id="nav-map">
+        <i>🗺</i> <span>Harta Misiuni</span>
+      </div>
+      <div class="nav-item" onclick="showSection('circle')" id="nav-circle">
+        <i>⬡</i> <span>Inner Circle</span>
+        <span class="nav-badge" id="badge-circle" style="background:#D4AF37;color:#000;display:none">0</span>
+      </div>
+      <div class="nav-item" onclick="showSection('vvhi')" id="nav-vvhi">
+        <i>🤖</i> <span>VVhi Shadow</span>
+      </div>
+      <div class="nav-item logout-btn" onclick="handleLogout()">
+        <i>🚪</i> <span>Deconectare</span>
+      </div>
     </div>
 
-    <!-- MISIUNI -->
-    <div class="section active" id="section-missions">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:8px">
-        <div style="display:flex;gap:8px;flex-wrap:wrap">
-          <button class="btn-tab active" onclick="loadMissions('pending')" id="tab-pending">⏳ Pending</button>
+    <!-- MAIN CONTENT -->
+    <div class="main-content" id="main-content">
+
+      <!-- MISIUNI -->
+      <div class="section active" id="section-missions">
+        <div class="section-header-row">
+          <div>
+            <div class="section-title">Galerie Misiuni</div>
+            <div class="section-desc">Validează misiunile trimise de Insideri. Aprobare = VV Coins automat.</div>
+          </div>
+          <button class="btn-delete-all" onclick="deleteAllRejected()">🗑 Șterge respinse</button>
+        </div>
+        <div style="display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap">
+          <button class="btn-tab active" onclick="loadMissions('pending')" id="tab-pending">⏳ În așteptare</button>
           <button class="btn-tab" onclick="loadMissions('approved')" id="tab-approved">✅ Aprobate</button>
           <button class="btn-tab" onclick="loadMissions('rejected')" id="tab-rejected">❌ Respinse</button>
         </div>
-        <button class="btn-danger" onclick="deleteAllRejected()">🗑 Șterge respinse</button>
+        <div class="grid-container" id="missions-grid">
+          <div style="color:var(--text-muted);padding:20px">Se încarcă misiunile...</div>
+        </div>
       </div>
-      <div class="photo-grid" id="missions-grid">
-        <div style="color:var(--text-muted);padding:20px">Se încarcă misiunile...</div>
+
+      <!-- CONTRACTE -->
+      <div class="section" id="section-contracts">
+        <div class="section-header-row">
+          <div><div class="section-title">Contracte Active</div><div class="section-desc">Gestionează contractele lansate de utilizatori.</div></div>
+        </div>
+        <div id="contracts-list"><div style="color:var(--text-muted);padding:20px">Se încarcă...</div></div>
       </div>
-    </div>
 
-    <!-- CONTRACTE -->
-    <div class="section" id="section-contracts">
-      <div id="contracts-list"><div style="color:var(--text-muted);padding:20px">Se încarcă...</div></div>
-    </div>
-
-    <!-- FEEDBACK -->
-    <div class="section" id="section-feedback">
-      <div style="display:flex;justify-content:flex-end;margin-bottom:16px">
-        <button class="btn-danger" onclick="deleteAllFeedback()">🗑 Șterge rezolvate</button>
+      <!-- FEEDBACK -->
+      <div class="section" id="section-feedback">
+        <div class="section-header-row">
+          <div><div class="section-title">Feedback & Suport</div><div class="section-desc">Bug reports și mesaje de la utilizatori.</div></div>
+          <button class="btn-delete-all" onclick="deleteAllFeedback()">🗑 Șterge rezolvate</button>
+        </div>
+        <div id="feedback-list"><div style="color:var(--text-muted);padding:20px">Se încarcă...</div></div>
       </div>
-      <div id="feedback-list"><div style="color:var(--text-muted);padding:20px">Se încarcă...</div></div>
-    </div>
 
-    <!-- TALENT POOL -->
-    <div class="section" id="section-talent">
-      <div id="talent-list"><div style="color:var(--text-muted);padding:20px">Se încarcă...</div></div>
-    </div>
-
-    <!-- LEADERBOARD -->
-    <div class="section" id="section-leaderboard">
-      <table class="vv-table">
-        <thead><tr><th>#</th><th>Utilizator</th><th>Rang</th><th>VV Coins</th><th>Misiuni</th></tr></thead>
-        <tbody id="leaderboard-body"><tr><td colspan="5" style="color:var(--text-muted);text-align:center;padding:20px">Se încarcă...</td></tr></tbody>
-      </table>
-    </div>
-
-    <!-- CHEI BETA -->
-    <div class="section" id="section-keys">
-      <div class="key-card">
-        <div style="font-size:13px;color:var(--text-muted);margin-bottom:14px">Generează o nouă cheie de acces unică.</div>
-        <button class="btn-primary" onclick="generateKey()">🔑 Generează cheie nouă</button>
-        <div id="keys-list" style="margin-top:16px"></div>
+      <!-- TALENT POOL -->
+      <div class="section" id="section-talent">
+        <div class="section-header-row">
+          <div><div class="section-title">Talent Pool</div><div class="section-desc">Gestionează rangurile utilizatorilor în ecosistem.</div></div>
+        </div>
+        <div id="talent-list"><div style="color:var(--text-muted);padding:20px">Se încarcă...</div></div>
       </div>
-    </div>
 
-    <!-- CONFIG LIVE -->
-    <div class="section" id="section-config">
-      <div style="display:flex;flex-direction:column;gap:14px">
-        <div class="card">
-          <div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:10px">Kill Switch</div>
-          <div style="display:flex;gap:10px">
-            <button class="btn-approve" onclick="setKillSwitch(true)">🟢 Activează Site</button>
-            <button class="btn-reject" onclick="setKillSwitch(false)">🔴 Mentenanță</button>
+      <!-- LEADERBOARD -->
+      <div class="section" id="section-leaderboard">
+        <div class="section-header-row">
+          <div><div class="section-title">Leaderboard VV Onyx</div><div class="section-desc">Top utilizatori după VV Coins acumulate.</div></div>
+        </div>
+        <table class="vv-table">
+          <thead><tr><th>#</th><th>Utilizator</th><th>Rang</th><th>VV Coins</th><th>Misiuni</th></tr></thead>
+          <tbody id="leaderboard-body"><tr><td colspan="5" style="color:var(--text-muted);text-align:center;padding:20px">Se încarcă...</td></tr></tbody>
+        </table>
+      </div>
+
+      <!-- CHEI BETA -->
+      <div class="section" id="section-keys">
+        <div class="section-header-row">
+          <div><div class="section-title">Chei Beta</div><div class="section-desc">Generează și gestionează cheile de acces VV Beta.</div></div>
+        </div>
+        <div class="key-generator-card">
+          <div style="font-size:13px;color:var(--text-muted);margin-bottom:15px">Generează o nouă cheie de acces unică pentru un utilizator.</div>
+          <button class="btn-primary" onclick="generateKey()">🔑 Generează cheie nouă</button>
+          <div id="keys-list"></div>
+        </div>
+      </div>
+
+      <!-- CONFIG LIVE -->
+      <div class="section" id="section-config">
+        <div class="section-header-row">
+          <div><div class="section-title">Config Live</div><div class="section-desc">Modifică setările ecosistemului în timp real.</div></div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:15px;max-width:500px">
+          <div class="key-generator-card">
+            <div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:10px">Kill Switch</div>
+            <div style="display:flex;gap:10px">
+              <button class="btn-approve" onclick="setKillSwitch(true)">🟢 Activează Site</button>
+              <button class="btn-reject" onclick="setKillSwitch(false)">🔴 Pune în Mentenanță</button>
+            </div>
+          </div>
+          <div class="key-generator-card">
+            <div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:10px">Valoare VV Coin per misiune</div>
+            <div style="display:flex;gap:10px;align-items:center">
+              <input id="coin-value-input" type="number" value="10" min="1" max="100" style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);padding:10px 15px;border-radius:8px;color:#fff;font-size:16px;width:100px;outline:none">
+              <button class="btn-approve" onclick="updateCoinValue()">Salvează</button>
+            </div>
+          </div>
+          <div class="key-generator-card">
+            <div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:10px">Mesajul zilei</div>
+            <textarea id="daily-message-input" style="width:100%;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);padding:10px 15px;border-radius:8px;color:#fff;font-size:14px;outline:none;resize:none;min-height:80px" placeholder="Scrie mesajul zilei..."></textarea>
+            <button class="btn-approve" style="margin-top:10px;width:100%" onclick="updateDailyMessage()">Publică mesajul</button>
           </div>
         </div>
-        <div class="card">
-          <div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:10px">Valoare VV Coin / misiune</div>
-          <div style="display:flex;gap:10px;align-items:center">
-            <input id="coin-value-input" type="number" value="10" min="1" max="100" style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);padding:10px 14px;border-radius:8px;color:#fff;font-size:16px;width:100px;outline:none">
-            <button class="btn-approve" onclick="updateCoinValue()">Salvează</button>
+      </div>
+
+      <!-- AUDIT LOG -->
+      <div class="section" id="section-audit">
+        <div class="section-header-row">
+          <div><div class="section-title">Audit Log</div><div class="section-desc">Toate acțiunile tale înregistrate pentru securitate.</div></div>
+        </div>
+        <table class="vv-table">
+          <thead><tr><th>Acțiune</th><th>Detalii</th><th>Data</th></tr></thead>
+          <tbody id="audit-log-body"><tr><td colspan="3" style="color:var(--text-muted);text-align:center;padding:20px">Se încarcă...</td></tr></tbody>
+        </table>
+      </div>
+
+      <!-- HARTA MISIUNI -->
+      <div class="section" id="section-map">
+        <div class="section-header-row">
+          <div><div class="section-title">Harta Misiuni</div><div class="section-desc">Vizualizare geografică a activității din ecosistem.</div></div>
+        </div>
+        <div id="ceo-map" style="width:100%;height:500px;border-radius:16px;border:1px solid var(--glass-border)"></div>
+      </div>
+
+      <!-- VVHI SHADOW MODE -->
+      <div class="section" id="section-vvhi">
+        <div class="section-header-row">
+          <div><div class="section-title">VVhi Shadow Mode</div><div class="section-desc">Dataset-ul tău de decizii CEO — antrenează AI-ul viitor.</div></div>
+        </div>
+        <div id="vvhi-stats" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:15px;margin-bottom:25px"></div>
+        <table class="vv-table">
+          <thead><tr><th>Acțiune</th><th>Context</th><th>Decizie</th><th>Data</th></tr></thead>
+          <tbody id="vvhi-body"><tr><td colspan="4" style="color:var(--text-muted);text-align:center;padding:20px">Se încarcă...</td></tr></tbody>
+        </table>
+      </div>
+
+      <!-- INNER CIRCLE -->
+      <div class="section" id="section-circle">
+        <div class="section-header-row">
+          <div>
+            <div class="section-title">⬡ Inner Circle</div>
+            <div class="section-desc">Gestionează contribuitorii VV. Verifică plata în Salt Bank înainte de deploy.</div>
+          </div>
+          <div id="circle-stats" style="font-size:13px;color:rgba(255,255,255,0.4)">Se încarcă...</div>
+        </div>
+        <div style="display:flex;gap:8px;margin-bottom:20px;background:rgba(255,255,255,0.04);border-radius:12px;padding:4px">
+          <button id="circle-tab-pending" onclick="switchCircleTab('pending')" style="flex:1;padding:10px;border:none;border-radius:9px;background:#fff;color:#000;font-weight:800;font-size:12px;cursor:pointer;min-height:44px;font-family:inherit">⏳ PENDING</button>
+          <button id="circle-tab-active" onclick="switchCircleTab('active')" style="flex:1;padding:10px;border:none;border-radius:9px;background:transparent;color:rgba(255,255,255,0.4);font-weight:800;font-size:12px;cursor:pointer;min-height:44px;font-family:inherit">✅ ACTIVI</button>
+        </div>
+        <div id="circle-pending-list"><div style="text-align:center;padding:30px;color:rgba(255,255,255,0.3);font-size:13px">Se încarcă...</div></div>
+        <div id="circle-active-list" style="display:none"><div style="text-align:center;padding:30px;color:rgba(255,255,255,0.3);font-size:13px">Se încarcă...</div></div>
+      </div>
+
+    </div><!-- end main-content -->
+  `;
+}
+
+// ============================================================
+// 3. NAVIGARE
+// ============================================================
+
+function showSection(name) {
+  // Cleanup listeners Circle dacă plecăm de la ea
+  if (currentSection === 'circle' && name !== 'circle') {
+    if (_circlePendingUnsub) { _circlePendingUnsub(); _circlePendingUnsub = null; }
+    if (_circleActiveUnsub)  { _circleActiveUnsub();  _circleActiveUnsub  = null; }
+  }
+
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+
+  const sec = document.getElementById('section-' + name);
+  const nav = document.getElementById('nav-' + name);
+  if (sec) sec.classList.add('active');
+  if (nav) nav.classList.add('active');
+  currentSection = name;
+
+  if (name === 'missions')    loadMissions('pending');
+  if (name === 'contracts')   loadContracts();
+  if (name === 'feedback')    loadFeedback();
+  if (name === 'talent')      loadTalentPool();
+  if (name === 'leaderboard') loadLeaderboard();
+  if (name === 'keys')        loadKeys();
+  if (name === 'audit')       loadAuditLog();
+  if (name === 'map')         initCEOMap();
+  if (name === 'vvhi')        loadVVhi();
+  if (name === 'config')      loadConfig();
+  if (name === 'circle')      switchCircleTab('pending');
+
+  logCEOAction('NAV', 'Navigat la: ' + name);
+}
+
+// ============================================================
+// 4. DASHBOARD INIT
+// ============================================================
+
+async function initDashboard() {
+  loadMissions('pending');
+  loadBadgeCounts();
+  loadTotalCoins();
+}
+
+async function loadBadgeCounts() {
+  try {
+    const [pending, contracts, feedback] = await Promise.all([
+      db.collection('missions').where('status','==','pending').get(),
+      db.collection('contracts').where('status','==','pending').get(),
+      db.collection('feedback').where('status','==','nou').get()
+    ]);
+    setBadge('missions', pending.size);
+    setBadge('contracts', contracts.size);
+    setBadge('feedback', feedback.size);
+  } catch (e) { console.error(e); }
+}
+
+function setBadge(name, count) {
+  const el = document.getElementById('badge-' + name);
+  if (!el) return;
+  el.textContent = count;
+  el.style.display = count > 0 ? 'inline-block' : 'none';
+}
+
+async function loadTotalCoins() {
+  try {
+    const snap = await db.collection('users').get();
+    let total = 0;
+    snap.forEach(d => { total += (d.data().vvCoins || 0); });
+    const el = document.getElementById('total-coins');
+    if (el) el.textContent = total + ' VVC';
+  } catch (e) {}
+}
+
+// ============================================================
+// 5. MISIUNI
+// ============================================================
+
+async function loadMissions(status) {
+  ['pending','approved','rejected'].forEach(s => {
+    const t = document.getElementById('tab-' + s);
+    if (t) t.classList.toggle('active', s === status);
+  });
+  const grid = document.getElementById('missions-grid');
+  if (!grid) return;
+  grid.innerHTML = '<div style="color:var(--text-muted);padding:20px">Se încarcă...</div>';
+  try {
+    const snap = await db.collection('missions').where('status','==',status).orderBy('createdAt','desc').get();
+    if (snap.empty) { grid.innerHTML = '<div style="color:var(--text-muted);padding:20px">Nicio misiune cu statusul: ' + status + '</div>'; return; }
+    grid.innerHTML = '';
+    snap.forEach(doc => grid.appendChild(buildMissionCard({ id: doc.id, ...doc.data() })));
+  } catch (e) {
+    grid.innerHTML = '<div style="color:var(--danger);padding:20px">Eroare: ' + e.message + '</div>';
+  }
+}
+
+function buildMissionCard(m) {
+  const div = document.createElement('div');
+  div.className = 'photo-card';
+  div.id = 'mission-' + m.id;
+  const imgSrc  = m.photoURL || m.imageUrl || '';
+  const userName = m.userName || m.userId || 'Anonim';
+  const reward   = m.reward || COIN_REWARD_DEFAULT;
+  const date     = m.createdAt ? new Date(m.createdAt.seconds * 1000).toLocaleDateString('ro') : '—';
+  div.innerHTML = `
+    ${imgSrc ? `<img class="photo-img" src="${imgSrc}" alt="Misiune" onclick="openLightbox('${imgSrc}')">` : '<div style="height:120px;background:#111;display:flex;align-items:center;justify-content:center;color:var(--text-muted);font-size:12px">Fără imagine</div>'}
+    <div class="photo-info">
+      ${m.status === 'rejected' ? '<span class="flag-badge">RESPINSĂ</span>' : ''}
+      <div class="photo-msg">${m.description || m.message || 'Fără descriere'}</div>
+      <div class="photo-meta"><span>👤 ${userName}</span><span>📅 ${date}</span></div>
+      <div class="photo-meta" style="margin-top:6px">
+        <span>🪙 Reward: <b style="color:var(--gold)">${reward} VVC</b></span>
+        <span>📍 ${m.location || '—'}</span>
+      </div>
+      ${m.status === 'pending' ? `<div class="action-row">
+        <button class="btn-approve" onclick="approveMission('${m.id}','${m.userId}',${reward})">✅ Aprobă</button>
+        <button class="btn-reject" onclick="rejectMission('${m.id}')">❌ Respinge</button>
+      </div>` : ''}
+      ${m.status === 'approved' ? `<div style="color:var(--safe-green);font-size:12px;margin-top:10px;font-weight:700">✅ Aprobată · +${reward} VVC distribuit</div>` : ''}
+    </div>`;
+  return div;
+}
+
+async function approveMission(missionId, userId, rewardAmount) {
+  if (!confirm('Aprobi misiunea și distribui ' + rewardAmount + ' VV Coins?')) return;
+  const batch = db.batch();
+  try {
+    batch.update(db.collection('missions').doc(missionId), { status: 'approved', validatedAt: firebase.firestore.FieldValue.serverTimestamp(), validatedBy: currentCEO?.uid || 'ceo' });
+    if (userId && userId !== 'undefined') {
+      batch.update(db.collection('users').doc(userId), { vvCoins: firebase.firestore.FieldValue.increment(rewardAmount), missionsApproved: firebase.firestore.FieldValue.increment(1) });
+      batch.set(db.collection('transactions').doc(), { userId, amount: rewardAmount, type: 'mission_reward', missionId, timestamp: firebase.firestore.FieldValue.serverTimestamp() });
+    }
+    await batch.commit();
+    logVVhi('APPROVE_MISSION', { missionId, userId, reward: rewardAmount });
+    logCEOAction('APPROVE_MISSION', 'Misiune: ' + missionId + ' | +' + rewardAmount + ' VVC → ' + userId);
+    db.collection('pulse_events').add({ type: 'mission', icon: '🎯', message: 'O misiune a fost <b>validată</b> de CEO · +' + rewardAmount + ' VVC', timestamp: firebase.firestore.FieldValue.serverTimestamp() });
+    const card = document.getElementById('mission-' + missionId);
+    if (card) card.remove();
+    showNotif('✅ Misiune aprobată! +' + rewardAmount + ' VVC distribuit.');
+    loadBadgeCounts();
+  } catch (e) { showNotif('Eroare: ' + e.message, true); }
+}
+
+async function rejectMission(missionId) {
+  if (!confirm('Respingi această misiune?')) return;
+  try {
+    await db.collection('missions').doc(missionId).update({ status: 'rejected', rejectedAt: firebase.firestore.FieldValue.serverTimestamp(), rejectedBy: currentCEO?.uid || 'ceo' });
+    logVVhi('REJECT_MISSION', { missionId });
+    logCEOAction('REJECT_MISSION', 'Misiune respinsă: ' + missionId);
+    const card = document.getElementById('mission-' + missionId);
+    if (card) card.remove();
+    showNotif('Misiune respinsă.');
+    loadBadgeCounts();
+  } catch (e) { showNotif('Eroare: ' + e.message, true); }
+}
+
+async function deleteAllRejected() {
+  if (!confirm('Ștergi toate misiunile respinse?')) return;
+  try {
+    const snap = await db.collection('missions').where('status','==','rejected').get();
+    const batch = db.batch();
+    snap.forEach(d => batch.delete(d.ref));
+    await batch.commit();
+    logCEOAction('DELETE_REJECTED', 'Șterse ' + snap.size + ' misiuni respinse');
+    showNotif('🗑 ' + snap.size + ' misiuni șterse.');
+    loadMissions('rejected');
+  } catch (e) { showNotif('Eroare: ' + e.message, true); }
+}
+
+// ============================================================
+// 6. CONTRACTE
+// ============================================================
+
+async function loadContracts() {
+  const list = document.getElementById('contracts-list');
+  if (!list) return;
+  list.innerHTML = '<div style="color:var(--text-muted);padding:20px">Se încarcă...</div>';
+  try {
+    const snap = await db.collection('contracts').orderBy('createdAt','desc').limit(50).get();
+    if (snap.empty) { list.innerHTML = '<div style="color:var(--text-muted);padding:20px">Niciun contract.</div>'; return; }
+    list.innerHTML = '';
+    snap.forEach(doc => {
+      const c = { id: doc.id, ...doc.data() };
+      const date = c.createdAt ? new Date(c.createdAt.seconds * 1000).toLocaleDateString('ro') : '—';
+      const div = document.createElement('div');
+      div.className = 'contract-card';
+      div.innerHTML = `
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:10px">
+          <div>
+            <div style="font-size:15px;font-weight:700;margin-bottom:5px">${c.title || 'Contract fără titlu'}</div>
+            <div style="font-size:13px;color:var(--text-muted)">${c.description || '—'}</div>
+            <div style="font-size:11px;color:var(--text-muted);margin-top:8px">👤 ${c.userId || 'Anonim'} · 📅 ${date} · 🪙 ${c.reward || 0} VVC</div>
+          </div>
+          <div style="display:flex;gap:8px;flex-shrink:0">
+            <span style="padding:4px 10px;border-radius:6px;font-size:11px;font-weight:700;border:1px solid currentColor;background:${c.status==='pending'?'rgba(255,149,0,0.1)':c.status==='active'?'rgba(52,199,89,0.1)':'rgba(255,255,255,0.05)'};color:${c.status==='pending'?'#ff9500':c.status==='active'?'var(--safe-green)':'var(--text-muted)'}">${(c.status||'unknown').toUpperCase()}</span>
+            ${c.status==='pending'?`<button class="btn-approve" style="padding:6px 12px;font-size:11px" onclick="activateContract('${c.id}')">Activează</button>`:''}
+            <button class="btn-reject" style="padding:6px 12px;font-size:11px" onclick="deleteContract('${c.id}')">Șterge</button>
+          </div>
+        </div>`;
+      list.appendChild(div);
+    });
+  } catch (e) { list.innerHTML = '<div style="color:var(--danger);padding:20px">Eroare: ' + e.message + '</div>'; }
+}
+
+async function activateContract(id) {
+  try { await db.collection('contracts').doc(id).update({ status:'active' }); logCEOAction('ACTIVATE_CONTRACT', id); showNotif('Contract activat!'); loadContracts(); }
+  catch (e) { showNotif('Eroare: ' + e.message, true); }
+}
+async function deleteContract(id) {
+  if (!confirm('Ștergi contractul?')) return;
+  try { await db.collection('contracts').doc(id).delete(); logCEOAction('DELETE_CONTRACT', id); showNotif('Contract șters.'); loadContracts(); }
+  catch (e) { showNotif('Eroare: ' + e.message, true); }
+}
+
+// ============================================================
+// 7. FEEDBACK
+// ============================================================
+
+async function loadFeedback() {
+  const list = document.getElementById('feedback-list');
+  if (!list) return;
+  list.innerHTML = '<div style="color:var(--text-muted);padding:20px">Se încarcă...</div>';
+  try {
+    const snap = await db.collection('feedback').orderBy('timestamp','desc').limit(50).get();
+    if (snap.empty) { list.innerHTML = '<div style="color:var(--text-muted);padding:20px">Niciun feedback.</div>'; return; }
+    list.innerHTML = '';
+    snap.forEach(doc => {
+      const f = { id: doc.id, ...doc.data() };
+      const date = f.timestamp ? new Date(f.timestamp.seconds * 1000).toLocaleString('ro') : '—';
+      const isBug = f.type === 'bug_report';
+      const div = document.createElement('div');
+      div.className = 'feedback-card' + (isBug ? ' bug' : '');
+      div.innerHTML = `
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:10px;margin-bottom:10px">
+          <div>
+            ${isBug ? '<span class="flag-badge">BUG REPORT</span>' : ''}
+            <div style="font-size:13px;color:#fff;margin-top:5px">${f.message || '—'}</div>
+            <div style="font-size:11px;color:var(--text-muted);margin-top:6px">👤 ${f.alias||f.uid||'Anonim'} · 📅 ${date} · Sursă: ${f.source||'—'}</div>
+          </div>
+          <div style="display:flex;gap:8px">
+            <button class="btn-reply" onclick="replyFeedback('${f.id}','${(f.alias||'utilizator').replace(/'/g,"\\'")}')">💬 Răspunde</button>
+            <button class="btn-reject" style="padding:6px 12px;font-size:11px" onclick="resolveFeedback('${f.id}')">✓ Rezolvat</button>
           </div>
         </div>
-        <div class="card">
-          <div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:10px">Mesajul zilei</div>
-          <textarea id="daily-message-input" style="width:100%;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);padding:10px 14px;border-radius:8px;color:#fff;font-size:14px;outline:none;resize:none;min-height:80px" placeholder="Scrie mesajul zilei..."></textarea>
-          <button class="btn-approve" style="margin-top:10px;width:100%" onclick="updateDailyMessage()">Publică mesajul</button>
+        ${f.reply ? `<div style="background:rgba(10,132,255,0.08);border:1px solid rgba(10,132,255,0.2);border-radius:8px;padding:10px;font-size:12px;color:rgba(255,255,255,0.6)">💬 Răspuns tău: ${f.reply}</div>` : ''}`;
+      list.appendChild(div);
+    });
+  } catch (e) { list.innerHTML = '<div style="color:var(--danger);padding:20px">Eroare: ' + e.message + '</div>'; }
+}
+
+function replyFeedback(id, alias) {
+  const reply = prompt('Răspuns pentru ' + alias + ':');
+  if (!reply) return;
+  db.collection('feedback').doc(id).update({ reply, repliedAt: firebase.firestore.FieldValue.serverTimestamp(), status: 'rezolvat' })
+    .then(() => { showNotif('Răspuns salvat!'); logCEOAction('REPLY_FEEDBACK', id); loadFeedback(); })
+    .catch(e => showNotif('Eroare: ' + e.message, true));
+}
+async function resolveFeedback(id) {
+  try { await db.collection('feedback').doc(id).update({ status:'rezolvat' }); logCEOAction('RESOLVE_FEEDBACK', id); showNotif('Marcat ca rezolvat.'); loadFeedback(); }
+  catch (e) { showNotif('Eroare: ' + e.message, true); }
+}
+async function deleteAllFeedback() {
+  if (!confirm('Ștergi tot feedback-ul rezolvat?')) return;
+  try {
+    const snap = await db.collection('feedback').where('status','==','rezolvat').get();
+    const batch = db.batch(); snap.forEach(d => batch.delete(d.ref)); await batch.commit();
+    showNotif('🗑 ' + snap.size + ' feedback-uri șterse.'); loadFeedback();
+  } catch (e) { showNotif('Eroare: ' + e.message, true); }
+}
+
+// ============================================================
+// 8. TALENT POOL
+// ============================================================
+
+async function loadTalentPool() {
+  const list = document.getElementById('talent-list');
+  if (!list) return;
+  list.innerHTML = '<div style="color:var(--text-muted);padding:20px">Se încarcă...</div>';
+  try {
+    const snap = await db.collection('talent_pool').orderBy('appliedAt','desc').get();
+    if (snap.empty) { list.innerHTML = '<div style="color:var(--text-muted);padding:20px">Niciun aplicant.</div>'; return; }
+    list.innerHTML = '';
+    snap.forEach(doc => {
+      const u = { id: doc.id, ...doc.data() };
+      const div = document.createElement('div');
+      div.className = 'talent-card';
+      div.innerHTML = `
+        <div style="flex:1;min-width:0">
+          <div style="font-size:14px;font-weight:700">${u.name||u.userId||'Anonim'}</div>
+          <div style="font-size:12px;color:var(--text-muted);margin-top:3px">${u.skills||'—'} · 🪙 ${u.vvCoins||0} VVC</div>
+          <div style="font-size:11px;color:var(--text-muted);margin-top:3px">${u.bio||''}</div>
         </div>
-      </div>
-    </div>
+        <select class="rank-select" onchange="updateUserRank('${u.userId||u.id}',this.value)">
+          ${RANKS.map(r => `<option value="${r}" ${u.rank===r?'selected':''}>${r}</option>`).join('')}
+        </select>
+        <button class="btn-reject" style="padding:8px 12px;font-size:11px;min-height:36px" onclick="removeTalent('${u.id}')">✕</button>`;
+      list.appendChild(div);
+    });
+  } catch (e) { list.innerHTML = '<div style="color:var(--danger);padding:20px">Eroare: ' + e.message + '</div>'; }
+}
 
-    <!-- AUDIT LOG -->
-    <div class="section" id="section-audit">
-      <table class="vv-table">
-        <thead><tr><th>Acțiune</th><th>Detalii</th><th>Data</th></tr></thead>
-        <tbody id="audit-log-body"><tr><td colspan="3" style="color:var(--text-muted);text-align:center;padding:20px">Se încarcă...</td></tr></tbody>
-      </table>
-    </div>
+async function updateUserRank(userId, newRank) {
+  try {
+    await db.collection('users').doc(userId).update({ rank: newRank });
+    const snap = await db.collection('talent_pool').where('userId','==',userId).get();
+    const batch = db.batch(); snap.forEach(d => batch.update(d.ref, { rank: newRank })); await batch.commit();
+    logCEOAction('UPDATE_RANK', userId + ' → ' + newRank); showNotif('Rang actualizat: ' + newRank);
+  } catch (e) { showNotif('Eroare: ' + e.message, true); }
+}
+async function removeTalent(id) {
+  if (!confirm('Elimini din Talent Pool?')) return;
+  try { await db.collection('talent_pool').doc(id).delete(); logCEOAction('REMOVE_TALENT', id); showNotif('Eliminat.'); loadTalentPool(); }
+  catch (e) { showNotif('Eroare: ' + e.message, true); }
+}
 
-    <!-- HARTA MISIUNI -->
-    <div class="section" id="section-map">
-      <div id="ceo-map"></div>
-    </div>
+// ============================================================
+// 9. LEADERBOARD
+// ============================================================
 
-    <!-- VVHI SHADOW MODE -->
-    <div class="section" id="section-vvhi">
-      <div class="stat-grid" id="vvhi-stats"></div>
-      <table class="vv-table">
-        <thead><tr><th>Acțiune</th><th>Context</th><th>Decizie</th><th>Data</th></tr></thead>
-        <tbody id="vvhi-body"><tr><td colspan="4" style="color:var(--text-muted);text-align:center;padding:20px">Se încarcă...</td></tr></tbody>
-      </table>
-    </div>
+async function loadLeaderboard() {
+  const tbody = document.getElementById('leaderboard-body');
+  if (!tbody) return;
+  try {
+    const snap = await db.collection('users').orderBy('vvCoins','desc').limit(20).get();
+    if (snap.empty) { tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--text-muted);padding:20px">Niciun utilizator.</td></tr>'; return; }
+    let html = '', i = 1;
+    snap.forEach(doc => {
+      const u = doc.data();
+      html += `<tr>
+        <td class="${i<=3?'rank-gold':''}">${i===1?'🥇':i===2?'🥈':i===3?'🥉':'#'+i}</td>
+        <td>${u.name||u.email||doc.id.slice(0,8)}</td>
+        <td><span class="badge-onyx">${u.rank||'Neofit'}</span></td>
+        <td style="color:var(--gold);font-weight:700">${u.vvCoins||0} VVC</td>
+        <td>${u.missionsApproved||0}</td>
+      </tr>`;
+      i++;
+    });
+    tbody.innerHTML = html;
+  } catch (e) { tbody.innerHTML = '<tr><td colspan="5" style="color:var(--danger);padding:20px">Eroare: ' + e.message + '</td></tr>'; }
+}
 
-    <!-- INNER CIRCLE -->
-    <div class="section" id="section-circle">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:8px">
-        <div style="font-size:13px;color:rgba(255,255,255,0.4)" id="circle-stats">Se încarcă...</div>
-      </div>
-      <div style="display:flex;gap:8px;margin-bottom:16px;background:rgba(255,255,255,0.04);border-radius:12px;padding:4px">
-        <button id="circle-tab-pending" onclick="switchCircleTab('pending')" style="flex:1;padding:10px;border:none;border-radius:9px;background:#fff;color:#000;font-weight:800;font-size:12px;cursor:pointer;min-height:44px;font-family:inherit">⏳ PENDING</button>
-        <button id="circle-tab-active" onclick="switchCircleTab('active')" style="flex:1;padding:10px;border:none;border-radius:9px;background:transparent;color:rgba(255,255,255,0.4);font-weight:800;font-size:12px;cursor:pointer;min-height:44px;font-family:inherit">✅ ACTIVI</button>
-      </div>
-      <div id="circle-pending-list"><div style="text-align:center;padding:30px;color:rgba(255,255,255,0.3);font-size:13px">Se încarcă...</div></div>
-      <div id="circle-active-list" style="display:none"><div style="text-align:center;padding:30px;color:rgba(255,255,255,0.3);font-size:13px">Se încarcă...</div></div>
-    </div>
+// ============================================================
+// 10. CHEI BETA
+// ============================================================
 
-  </div><!-- end main-content -->
-</div><!-- end app-shell -->
+async function loadKeys() {
+  const list = document.getElementById('keys-list');
+  if (!list) return;
+  try {
+    const snap = await db.collection('keys').orderBy('createdAt','desc').limit(20).get();
+    if (snap.empty) { list.innerHTML = '<div style="color:var(--text-muted);margin-top:15px">Nicio cheie generată.</div>'; return; }
+    list.innerHTML = '';
+    snap.forEach(doc => {
+      const k = doc.data();
+      const div = document.createElement('div');
+      div.className = 'key-item';
+      div.innerHTML = `<span>${k.key||doc.id}</span><span class="key-status">${k.status==='used'?'🔴 FOLOSITĂ':'🟢 LIBERĂ'}</span>`;
+      list.appendChild(div);
+    });
+  } catch (e) {}
+}
 
-<!-- LIGHTBOX -->
-<div id="lightbox" onclick="closeLightbox()">
-  <div class="lb-close" onclick="closeLightbox()">✕</div>
-  <img id="lb-img" src="" alt="">
-</div>
+function generateKey() {
+  const key = 'VV-BETA-' + Math.random().toString(36).substr(2,4).toUpperCase() + '-' + Math.random().toString(36).substr(2,4).toUpperCase();
+  db.collection('keys').add({ key, status:'free', createdAt: firebase.firestore.FieldValue.serverTimestamp() })
+    .then(() => { showNotif('🔑 Cheie generată: ' + key); logCEOAction('GEN_KEY', key); loadKeys(); })
+    .catch(e => showNotif('Eroare: ' + e.message, true));
+}
 
-<!-- NOTIF -->
-<div id="vv-notif"></div>
+// ============================================================
+// 11. CONFIG LIVE
+// ============================================================
 
-<script src="vv-team-logic.js"></script>
+async function loadConfig() {
+  try {
+    const snap = await db.collection('config').doc('global').get();
+    if (snap.exists) {
+      const d = snap.data();
+      const coinInput = document.getElementById('coin-value-input');
+      const msgInput  = document.getElementById('daily-message-input');
+      if (coinInput && d.coinValue)    coinInput.value = d.coinValue;
+      if (msgInput  && d.dailyMessage) msgInput.value  = d.dailyMessage;
+    }
+  } catch (e) {}
+}
+
+function setKillSwitch(isLive) {
+  db.collection('config').doc('maintenance').set({ isLive }, { merge:true })
+    .then(() => { showNotif(isLive ? '🟢 Site activ!' : '🔴 Site în mentenanță!'); logCEOAction('KILLSWITCH', isLive?'ON':'OFF'); })
+    .catch(e => showNotif('Eroare: ' + e.message, true));
+}
+function updateCoinValue() {
+  const val = parseInt(document.getElementById('coin-value-input')?.value) || 10;
+  db.collection('config').doc('global').set({ coinValue: val }, { merge:true })
+    .then(() => { showNotif('🪙 Valoare: ' + val); logCEOAction('CONFIG_COIN', val); })
+    .catch(e => showNotif('Eroare: ' + e.message, true));
+}
+function updateDailyMessage() {
+  const msg = document.getElementById('daily-message-input')?.value || '';
+  if (!msg) return;
+  db.collection('config').doc('global').set({ dailyMessage: msg }, { merge:true })
+    .then(() => { showNotif('📢 Mesaj publicat!'); logCEOAction('CONFIG_MSG', msg.slice(0,50)); })
+    .catch(e => showNotif('Eroare: ' + e.message, true));
+}
+
+// ============================================================
+// 12. AUDIT LOG
+// ============================================================
+
+function logCEOAction(action, details = '') {
+  if (!currentCEO) return;
+  db.collection('audit_log').add({ action, details, ceoUid: currentCEO.uid, timestamp: firebase.firestore.FieldValue.serverTimestamp() }).catch(() => {});
+}
+
+async function loadAuditLog() {
+  const tbody = document.getElementById('audit-log-body');
+  if (!tbody) return;
+  try {
+    const snap = await db.collection('audit_log').orderBy('timestamp','desc').limit(50).get();
+    if (snap.empty) { tbody.innerHTML = '<tr><td colspan="3" style="text-align:center;color:var(--text-muted);padding:20px">Nicio acțiune înregistrată.</td></tr>'; return; }
+    let html = '';
+    snap.forEach(doc => {
+      const l = doc.data();
+      const date = l.timestamp ? new Date(l.timestamp.seconds * 1000).toLocaleString('ro') : '—';
+      html += `<tr><td style="font-weight:700;color:var(--gold)">${l.action}</td><td>${l.details||'—'}</td><td style="white-space:nowrap">${date}</td></tr>`;
+    });
+    tbody.innerHTML = html;
+  } catch (e) { tbody.innerHTML = '<tr><td colspan="3" style="color:var(--danger)">Eroare: ' + e.message + '</td></tr>'; }
+}
+
+// ============================================================
+// 13. HARTA CEO
+// ============================================================
+
+let ceoMapInstance = null;
+
+function initCEOMap() {
+  if (ceoMapInstance) return;
+  if (typeof L === 'undefined') {
+    const css = document.createElement('link'); css.rel = 'stylesheet'; css.href = 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css'; document.head.appendChild(css);
+    const s = document.createElement('script'); s.src = 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js'; s.onload = buildCEOMap; document.head.appendChild(s);
+  } else { buildCEOMap(); }
+}
+
+function buildCEOMap() {
+  const el = document.getElementById('ceo-map');
+  if (!el || ceoMapInstance) return;
+  ceoMapInstance = L.map('ceo-map', { center: [44.4268, 26.1025], zoom: 12 });
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { maxZoom: 19, subdomains: 'abcd' }).addTo(ceoMapInstance);
+  db.collection('missions').where('status','==','pending').get().then(snap => {
+    snap.forEach(doc => {
+      const m = doc.data();
+      if (m.lat && m.lng) {
+        L.circleMarker([m.lat, m.lng], { radius: 8, color: '#D4AF37', fillColor: '#D4AF37', fillOpacity: 0.8 })
+          .addTo(ceoMapInstance)
+          .bindPopup(`<div style="padding:12px;min-width:180px;background:#0a0a0c;color:#fff"><b style="color:#D4AF37">${m.userName||'Anonim'}</b><br><span style="font-size:12px;color:rgba(255,255,255,0.6)">${m.description||'—'}</span></div>`, { className: 'ceo-popup' });
+      }
+    });
+  }).catch(() => {});
+}
+
+// ============================================================
+// 14. VVHI SHADOW MODE
+// ============================================================
+
+function logVVhi(action, context) {
+  db.collection('vvhi_dataset').add({ action, context, ceoUid: currentCEO?.uid || 'ceo', timestamp: firebase.firestore.FieldValue.serverTimestamp() }).catch(() => {});
+}
+
+async function loadVVhi() {
+  const tbody = document.getElementById('vvhi-body');
+  const statsEl = document.getElementById('vvhi-stats');
+  if (!tbody) return;
+  try {
+    const snap = await db.collection('vvhi_dataset').orderBy('timestamp','desc').limit(100).get();
+    if (snap.empty) { tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:var(--text-muted);padding:20px">Nicio decizie înregistrată încă.</td></tr>'; return; }
+    let approvals = 0, rejections = 0;
+    snap.forEach(d => { if (d.data().action==='APPROVE_MISSION') approvals++; if (d.data().action==='REJECT_MISSION') rejections++; });
+    if (statsEl) statsEl.innerHTML = `
+      <div class="vvhi-stat-card"><div class="vvhi-stat-val" style="color:var(--safe-green)">${approvals}</div><div class="vvhi-stat-lbl">Aprobări</div></div>
+      <div class="vvhi-stat-card"><div class="vvhi-stat-val" style="color:var(--danger)">${rejections}</div><div class="vvhi-stat-lbl">Respingeri</div></div>
+      <div class="vvhi-stat-card"><div class="vvhi-stat-val">${snap.size}</div><div class="vvhi-stat-lbl">Total decizii</div></div>
+      <div class="vvhi-stat-card"><div class="vvhi-stat-val" style="color:var(--gold)">${approvals>0?Math.round((approvals/(approvals+rejections))*100):0}%</div><div class="vvhi-stat-lbl">Rata aprobare</div></div>`;
+    let html = '';
+    snap.forEach(doc => {
+      const v = doc.data();
+      const date = v.timestamp ? new Date(v.timestamp.seconds * 1000).toLocaleString('ro') : '—';
+      const ctx = typeof v.context === 'object' ? JSON.stringify(v.context) : (v.context||'—');
+      html += `<tr>
+        <td style="font-weight:700;color:${v.action.includes('APPROVE')?'var(--safe-green)':v.action.includes('REJECT')?'var(--danger)':'var(--gold)'}">${v.action}</td>
+        <td style="font-size:11px;color:var(--text-muted)">${ctx.slice(0,80)}</td>
+        <td style="color:#fff;font-weight:600">${v.action.includes('APPROVE')?'✅ Aprobat':v.action.includes('REJECT')?'❌ Respins':'📝 Acțiune'}</td>
+        <td style="white-space:nowrap;font-size:11px">${date}</td></tr>`;
+    });
+    tbody.innerHTML = html;
+  } catch (e) { tbody.innerHTML = '<tr><td colspan="4" style="color:var(--danger)">Eroare: ' + e.message + '</td></tr>'; }
+}
+
+// ============================================================
+// 15. LIGHTBOX
+// ============================================================
+
+function openLightbox(src) {
+  const lb  = document.getElementById('lightbox');
+  const img = document.getElementById('lb-img');
+  if (!lb || !img) return;
+  img.src = src;
+  lb.style.display = 'flex';
+}
+function closeLightbox() {
+  const lb = document.getElementById('lightbox');
+  if (lb) lb.style.display = 'none';
+}
+function lightboxNav(dir) { /* extinde cu array de imagini dacă e nevoie */ }
+
+// ============================================================
+// 16. NOTIFICĂRI
+// ============================================================
+
+function showNotif(msg, isError = false) {
+  let notif = document.getElementById('vv-notif');
+  if (!notif) {
+    notif = document.createElement('div');
+    notif.id = 'vv-notif';
+    notif.style.cssText = 'position:fixed;bottom:30px;left:50%;transform:translateX(-50%);background:rgba(20,20,22,0.96);border:1px solid rgba(255,255,255,0.12);border-radius:12px;padding:12px 20px;font-size:14px;color:#fff;z-index:99999;transition:opacity 0.3s;white-space:nowrap;font-family:inherit;max-width:90vw;text-align:center';
+    document.body.appendChild(notif);
+  }
+  notif.textContent = msg;
+  notif.style.borderColor = isError ? 'rgba(255,59,48,0.4)' : 'rgba(52,199,89,0.3)';
+  notif.style.opacity = '1';
+  clearTimeout(notif._timer);
+  notif._timer = setTimeout(() => { notif.style.opacity = '0'; }, 3000);
+}
+
+// ============================================================
+// 17. INNER CIRCLE
+// ============================================================
+
+var circleCurrentTab = 'pending';
+
+function switchCircleTab(tab) {
+  circleCurrentTab = tab;
+  var btnP  = document.getElementById('circle-tab-pending');
+  var btnA  = document.getElementById('circle-tab-active');
+  var listP = document.getElementById('circle-pending-list');
+  var listA = document.getElementById('circle-active-list');
+  if (tab === 'pending') {
+    if (btnP) { btnP.style.background = '#fff'; btnP.style.color = '#000'; }
+    if (btnA) { btnA.style.background = 'transparent'; btnA.style.color = 'rgba(255,255,255,0.4)'; }
+    if (listP) listP.style.display = 'block';
+    if (listA) listA.style.display = 'none';
+    loadCirclePending();
+  } else {
+    if (btnA) { btnA.style.background = '#fff'; btnA.style.color = '#000'; }
+    if (btnP) { btnP.style.background = 'transparent'; btnP.style.color = 'rgba(255,255,255,0.4)'; }
+    if (listP) listP.style.display = 'none';
+    if (listA) listA.style.display = 'block';
+    loadCircleActive();
+  }
+}
+
+function generateVVCoreId() {
+  var chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  var p1 = '', p2 = '';
+  for (var i = 0; i < 4; i++) p1 += chars[Math.floor(Math.random() * chars.length)];
+  for (var i = 0; i < 2; i++) p2 += chars[Math.floor(Math.random() * chars.length)];
+  return 'VV·CORE·' + p1 + '-' + p2;
+}
+
+function loadCirclePending() {
+  var list = document.getElementById('circle-pending-list');
+  if (!list) return;
+  // ── FIX: cleanup listener anterior ──
+  if (_circlePendingUnsub) { _circlePendingUnsub(); _circlePendingUnsub = null; }
+  list.innerHTML = '<div style="text-align:center;padding:20px;color:rgba(255,255,255,0.3);font-size:13px">Se încarcă...</div>';
+
+  _circlePendingUnsub = db.collection('contributors').where('status','==','pending')
+    .onSnapshot(function(snap) {
+      var badge = document.getElementById('badge-circle');
+      if (badge) { badge.textContent = snap.size; badge.style.display = snap.size > 0 ? 'inline-block' : 'none'; }
+      var stats = document.getElementById('circle-stats');
+      if (stats) stats.textContent = snap.size + ' pending';
+      if (snap.empty) {
+        list.innerHTML = '<div style="text-align:center;padding:30px;color:rgba(255,255,255,0.25);font-size:13px">Nicio cerere în așteptare. 🎉</div>';
+        return;
+      }
+      list.innerHTML = '';
+      snap.forEach(function(doc) {
+        var d = doc.data();
+        var card = document.createElement('div');
+        card.style.cssText = 'background:rgba(212,175,55,0.05);border:1px solid rgba(212,175,55,0.15);border-radius:16px;padding:16px;margin-bottom:12px;';
+        var dateStr = d.submittedAt ? d.submittedAt.toDate().toLocaleString('ro-RO') : '—';
+        var docId = doc.id;
+        var alias = (d.alias || 'INSIDER').replace(/'/g, "\\'");
+        card.innerHTML =
+          '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px">'
+          + '<div>'
+          + '<div style="font-size:15px;font-weight:800;color:#fff;margin-bottom:3px">' + (d.alias || 'INSIDER') + '</div>'
+          + '<div style="font-size:10px;color:rgba(255,255,255,0.3);font-family:monospace">' + docId.substring(0, 16) + '...</div>'
+          + '</div>'
+          + '<div style="font-size:10px;color:rgba(212,175,55,0.6);text-align:right">'
+          + '<div style="font-weight:700">⏳ PENDING</div>'
+          + '<div style="margin-top:2px;color:rgba(255,255,255,0.25)">' + dateStr + '</div>'
+          + '</div></div>'
+          + '<div style="display:flex;gap:8px">'
+          + '<button onclick="deployCircleId(\'' + docId + '\',\'' + alias + '\',event)" style="flex:1;padding:12px;background:rgba(212,175,55,0.15);border:1px solid rgba(212,175,55,0.35);border-radius:10px;color:#D4AF37;font-weight:800;font-size:12px;cursor:pointer;min-height:44px;font-family:inherit">⬡ VERIFY & DEPLOY IDENTITY</button>'
+          + '<button onclick="rejectCircle(\'' + docId + '\')" style="padding:12px 14px;background:rgba(255,59,48,0.08);border:1px solid rgba(255,59,48,0.2);border-radius:10px;color:#ff3b30;font-weight:700;font-size:12px;cursor:pointer;min-height:44px;font-family:inherit">✕</button>'
+          + '</div>';
+        list.appendChild(card);
+      });
+    }, function(err) {
+      list.innerHTML = '<div style="color:#ff3b30;padding:16px;font-size:12px">Eroare: ' + err.message + '</div>';
+    });
+}
+
+function loadCircleActive() {
+  var list = document.getElementById('circle-active-list');
+  if (!list) return;
+  // ── FIX: cleanup listener anterior ──
+  if (_circleActiveUnsub) { _circleActiveUnsub(); _circleActiveUnsub = null; }
+
+  _circleActiveUnsub = db.collection('contributors').where('status','==','active')
+    .onSnapshot(function(snap) {
+      var stats = document.getElementById('circle-stats');
+      if (stats) stats.textContent = snap.size + ' activi / 100';
+      if (snap.empty) {
+        list.innerHTML = '<div style="text-align:center;padding:30px;color:rgba(255,255,255,0.25);font-size:13px">Niciun contributor activ încă.</div>';
+        return;
+      }
+      list.innerHTML = '';
+      snap.forEach(function(doc) {
+        var d = doc.data();
+        var dateStr = d.activatedAt ? d.activatedAt.toDate().toLocaleDateString('ro-RO') : '—';
+        var isOnline = d.lastActive && (d.lastActive.toDate() > new Date(Date.now() - 5 * 60 * 1000));
+        var card = document.createElement('div');
+        card.style.cssText = 'background:rgba(52,199,89,0.04);border:1px solid rgba(52,199,89,0.12);border-radius:14px;padding:14px 16px;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;';
+        card.innerHTML =
+          '<div style="display:flex;align-items:center;gap:10px">'
+          + '<div style="width:8px;height:8px;border-radius:50%;background:' + (isOnline ? '#34c759;box-shadow:0 0 6px rgba(52,199,89,0.5)' : 'rgba(255,255,255,0.2)') + '"></div>'
+          + '<div>'
+          + '<div style="font-size:13px;font-weight:700;color:#fff">' + (d.alias || 'INSIDER') + '</div>'
+          + '<div style="font-size:11px;font-family:monospace;color:#D4AF37;margin-top:2px">' + (d.vvCoreId || '—') + '</div>'
+          + '</div></div>'
+          + '<div style="text-align:right">'
+          + '<div style="font-size:10px;color:rgba(52,199,89,0.6);font-weight:700">ACTIV</div>'
+          + '<div style="font-size:10px;color:rgba(255,255,255,0.25);margin-top:2px">' + dateStr + '</div>'
+          + '</div>';
+        list.appendChild(card);
+      });
+    }, function(err) {
+      list.innerHTML = '<div style="color:#ff3b30;padding:16px;font-size:12px">Eroare: ' + err.message + '</div>';
+    });
+}
+
+async function deployCircleId(uid, alias, event) {
+  if (!confirm('Ai verificat plata de 29 lei de la ' + alias + ' în Salt Bank?\n\nApasă OK pentru a activa identitatea VV·CORE.')) return;
+  var btn = event.currentTarget;
+  btn.textContent = 'SE DEPLOYEAZĂ...';
+  btn.style.opacity = '0.6';
+  btn.style.pointerEvents = 'none';
+
+  try {
+    // ── 1. Generează VV·CORE·ID unic ──
+    var newCoreId = generateVVCoreId();
+    var existing = await db.collection('contributors').where('vvCoreId','==',newCoreId).get();
+    if (!existing.empty) newCoreId = generateVVCoreId();
+
+    // ── 2. Generează VV·ID (identitate comportamentală) ──
+    var chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+    var vvIdCode = 'VV·ID·';
+    for (var i = 0; i < 6; i++) vvIdCode += chars[Math.floor(Math.random() * chars.length)];
+
+    // ── 3. Contor atomic — founderNum unic garantat ──
+    // Folosim transaction pe doc stats/founders
+    var founderNum = await db.runTransaction(async function(transaction) {
+      var statsRef = db.collection('stats').doc('founders');
+      var statsDoc = await transaction.get(statsRef);
+      var currentNum = statsDoc.exists ? (statsDoc.data().count || 0) : 0;
+      var nextNum = currentNum + 1;
+      transaction.set(statsRef, { count: nextNum }, { merge: true });
+      return nextNum;
+    });
+
+    // ── 4. Motto pentru user ──
+    var M=["Primul pas e singurul care contează.","Unii construiesc. Tu ai construit.","Înainte de val, era cineva pe plajă.","Nucleul a început cu tine.","Cei care cred primii schimbă tot.","Nu ai așteptat dovezi. Ai fost dovada.","Rădăcinile nu se văd, dar țin totul.","Ai pus o piatră când alții întrebau unde e clădirea.","Fiecare mare lucru a avut un prim om.","Tu ai fost acel om.","Viziunea ta a precedat realitatea.","Ai ales să fii real înainte ca restul să fie gata.","Fondatorii nu găsesc drumuri. Le fac.","Curajul tău a marcat un început.","Înainte de aplauze, există tăcerea fondatorilor.","Ai semnat înainte ca lumea să știe ce semnează.","Orice mișcare mare a început cu o decizie mică.","Ai luat-o tu.","Cei care vin după vor ști că tu ai fost primul.","Nu oricine vede potențialul. Tu l-ai văzut.","Contribuția ta e invizibilă pentru mulți, eternă pentru noi.","Ai ales să construiești, nu să aștepți.","Fondatorii nu găsesc drumuri. Le fac.","Ai pus primul punct pe o hartă goală.","Lumea nu știe încă ce ai făcut. Noi știm.","Acțiunile tale de azi sunt istoria de mâine.","Ești dovada că lucrurile bune încep discret.","Fundațiile nu se văd niciodată. Dar țin totul în picioare.","Ai crezut când era cel mai ușor să nu crezi.","Contribuția ta e o amprentă care nu dispare.","Ești parte din ADN-ul acestui univers.","Locul tău în nucleu nu poate fi luat de nimeni altcineva.","E al tău. Pentru totdeauna.","Primii 100 scriu regulile. Tu ești unul dintre ei.","Universul VV a început cu oameni ca tine.","Ești parte din ce construim. Ești parte din noi."];
+    var h = 0;
+    for (var ci = 0; ci < uid.length; ci++) h = uid.charCodeAt(ci) + ((h << 5) - h);
+    var motto = M[Math.abs(h) % M.length];
+
+    // ── 5. Batch write — totul atomat ──
+    var batch = db.batch();
+
+    // contributors doc
+    batch.update(db.collection('contributors').doc(uid), {
+      status: 'active',
+      vvCoreId: newCoreId,
+      vvId: vvIdCode,
+      founderNum: founderNum,
+      motto: motto,
+      activatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+      activatedBy: 'CEO'
+    });
+
+    // users doc — insigna de fondator + VV ID
+    batch.set(db.collection('users').doc(uid), {
+      isFounder: true,
+      founderNum: founderNum,
+      vvCoreId: newCoreId,
+      vvId: vvIdCode,
+      alias: alias,
+      rank: 'Fondator',
+      founderActivatedAt: firebase.firestore.FieldValue.serverTimestamp()
+    }, { merge: true });
+
+    await batch.commit();
+
+    // ── 6. Inbox notificare user ──
+    await db.collection('inbox').add({
+      to: uid,
+      type: 'circle_activated',
+      message: '⬡ Identitatea ta VV·CORE a fost activată: ' + newCoreId +
+        '\n🪪 VV ID: ' + vvIdCode +
+        '\n🏆 Ești Fondator #' + founderNum + ' din 100.' +
+        '\n\nBine ai venit în nucleul Universului VV.',
+      vvCoreId: newCoreId,
+      vvId: vvIdCode,
+      founderNum: founderNum,
+      read: false,
+      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+
+    // ── 7. Log ──
+    logVVhi('CIRCLE_DEPLOY', { uid, alias, vvCoreId: newCoreId, vvId: vvIdCode, founderNum });
+    logCEOAction('CIRCLE_DEPLOY', alias + ' → ' + newCoreId + ' · #' + founderNum + ' · ' + vvIdCode);
+
+    showNotif('✅ #' + founderNum + ' · ' + newCoreId + ' deploiat pentru ' + alias + '!');
+
+  } catch (e) {
+    showNotif('Eroare: ' + e.message, true);
+    btn.textContent = '⬡ VERIFY & DEPLOY IDENTITY';
+    btn.style.opacity = '1';
+    btn.style.pointerEvents = 'auto';
+  }
+}
+
+async function rejectCircle(uid) {
+  if (!confirm('Respingi această cerere? Banii NU se returnează automat — fă-o manual din Salt Bank.')) return;
+  try {
+    await db.collection('contributors').doc(uid).update({ status: 'rejected', rejectedAt: firebase.firestore.FieldValue.serverTimestamp() });
+    await db.collection('inbox').add({
+      to: uid, type: 'circle_rejected',
+      message: 'Cererea ta pentru VV Inner Circle nu a putut fi verificată. Contactează VV Team pentru detalii.',
+      read: false, createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+    logCEOAction('CIRCLE_REJECT', uid);
+    showNotif('Cerere respinsă.');
+  } catch (e) { showNotif('Eroare: ' + e.message, true); }
+}
+  </script>
 </body>
 </html>
