@@ -1,10 +1,10 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="ro">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<title>VV Team · CEO Panel</title>
+<title>VV Command · CEO</title>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800;900&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
 <style>
 /* ── RESET & ROOT ── */
@@ -14,10 +14,10 @@
   --bg1:      #0a0a0f;
   --bg2:      #111118;
   --bg3:      #1a1a24;
-  --gold:     #D4AF37;
-  --gold2:    rgba(212,175,55,0.15);
-  --gold3:    rgba(212,175,55,0.08);
-  --gold-b:   rgba(212,175,55,0.2);
+  --gold:     rgba(255,255,255,0.82);
+  --gold2:    rgba(255,255,255,0.07);
+  --gold3:    rgba(255,255,255,0.04);
+  --gold-b:   rgba(255,255,255,0.1);
   --white:    #fff;
   --w80:      rgba(255,255,255,0.8);
   --w50:      rgba(255,255,255,0.5);
@@ -1004,7 +1004,7 @@ html, body {
   <aside class="sidebar">
     <div class="brand">
       <div class="brand-vv">VV</div>
-      <div class="brand-sub">HYBRID UNIVERS</div>
+      <div class="brand-sub">COMMAND CENTER</div>
       <div class="brand-role">
         <span class="brand-role-dot"></span>
         CEO · COMMAND CENTER
@@ -1073,6 +1073,19 @@ html, body {
         </div>
         <div class="nav-item" id="nav-config" onclick="showSection('config')">
           <span class="nav-icon">⚙️</span> Config Live
+        </div>
+      </div>
+      <div class="nav-section">
+        <div class="nav-section-label">VV SHIELD</div>
+        <div class="nav-item" id="nav-fraud" onclick="showSection('fraud')">
+          <span class="nav-icon">&#x1F6E1;</span> VVEil Fraud
+        </div>
+        <div class="nav-item" id="nav-mood" onclick="showSection('mood')">
+          <span class="nav-icon">&#x1F60C;</span> City Pulse
+          <span class="nav-badge" id="badge-mood">0</span>
+        </div>
+        <div class="nav-item" id="nav-scout" onclick="showSection('scout')">
+          <span class="nav-icon">&#x2B21;</span> VVScout
         </div>
       </div>
     </nav>
@@ -1422,6 +1435,69 @@ html, body {
         </div>
       </div>
 
+
+    <!-- ── FRAUD SECTION ─────────────────────────────────── -->
+    <div class="section" id="section-fraud">
+      <div class="page-header">
+        <div>
+          <div class="page-header-title">VVEil Fraud Detection</div>
+          <div class="page-header-sub">Validare dovezi · GPS verification</div>
+        </div>
+      </div>
+      <div class="tab-bar" style="padding:0 24px 16px;">
+        <div class="tab active" onclick="setActiveTab(this);_fraudFilter='all';renderFraud()">Toate</div>
+        <div class="tab" onclick="setActiveTab(this);_fraudFilter='flagged';renderFraud()">Alertate</div>
+        <div class="tab" onclick="setActiveTab(this);_fraudFilter='pending';renderFraud()">Pending</div>
+        <div class="tab" onclick="setActiveTab(this);_fraudFilter='approved';renderFraud()">Aprobate</div>
+      </div>
+      <div class="grid" id="fraud-grid">
+        <div class="loading"><div class="spinner"></div></div>
+      </div>
+    </div>
+
+    <!-- ── MOOD SECTION ───────────────────────────────────── -->
+    <div class="section" id="section-mood">
+      <div class="page-header">
+        <div>
+          <div class="page-header-title">City Pulse · VV Mood</div>
+          <div class="page-header-sub">Harta live energia urbana · anonim · $0</div>
+        </div>
+        <button class="btn btn-dim" onclick="loadMoodCEO()">Refresh</button>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;padding:0 24px 16px;">
+        <div class="panel" style="text-align:center;padding:20px;">
+          <div id="ds-mood-linis" style="font-size:32px;font-weight:900;color:#34d399;">-</div>
+          <div class="section-label" style="margin-top:6px;">LINIST</div>
+        </div>
+        <div class="panel" style="text-align:center;padding:20px;">
+          <div id="ds-mood-aglomerat" style="font-size:32px;font-weight:900;color:#FF9F0A;">-</div>
+          <div class="section-label" style="margin-top:6px;">AGLOMERAT</div>
+        </div>
+        <div class="panel" style="text-align:center;padding:20px;">
+          <div id="ds-mood-haos" style="font-size:32px;font-weight:900;color:#ff3b30;">-</div>
+          <div class="section-label" style="margin-top:6px;">HAOS</div>
+        </div>
+      </div>
+      <div class="panel" style="margin:0 24px 24px;">
+        <div class="panel-header">CELULE GEOHASH ACTIVE</div>
+        <div id="mood-cells-list" class="panel-body" style="display:flex;flex-direction:column;gap:6px;max-height:420px;overflow-y:auto;"></div>
+      </div>
+    </div>
+
+    <!-- ── SCOUT SECTION ──────────────────────────────────── -->
+    <div class="section" id="section-scout">
+      <div class="page-header">
+        <div>
+          <div class="page-header-title">VVScout · Entitati de Protejat</div>
+          <div class="page-header-sub">Baza reguli blur VVEil · Hybrid Firestore+local · $0</div>
+        </div>
+        <button class="btn btn-dim" onclick="loadScoutCEO()">Refresh</button>
+      </div>
+      <div class="panel" style="margin:0 24px 24px;">
+        <div class="panel-header">REGULI ACTIVE</div>
+        <div id="scout-rules-list" class="panel-body" style="display:flex;flex-direction:column;gap:6px;max-height:500px;overflow-y:auto;"></div>
+      </div>
+    </div>
     </div><!-- /content -->
   </div><!-- /main -->
 </div><!-- /app -->
@@ -1434,9 +1510,345 @@ html, body {
 <div id="vv-notif"></div>
 
 <!-- FIREBASE -->
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js">
+// ── UTILS ─────────────────────────────────────────────────────────────
+function esc(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+function showToast(msg, type) {
+  var t=document.createElement('div');
+  t.style.cssText='position:fixed;bottom:30px;left:50%;transform:translateX(-50%);background:'+(type==='green'?'rgba(52,199,89,0.9)':'rgba(255,59,48,0.9)')+';color:#fff;padding:12px 24px;border-radius:20px;font-size:13px;font-weight:700;z-index:99999;backdrop-filter:blur(10px);';
+  t.textContent=msg;document.body.appendChild(t);
+  setTimeout(function(){t.remove();},3000);
+}
+
+// ── FRAUD (VVEil) ─────────────────────────────────────────────────────
+var _fraudFilter='all';
+var _fraudAll=[];
+var _fraudUnsub=null;
+function loadFraud() {
+  var grid=document.getElementById('fraud-grid');
+  if(!grid)return;
+  if(_fraudUnsub)return;
+  grid.innerHTML='<div class="loading"><div class="spinner"></div></div>';
+  _fraudUnsub=db.collection('photos').orderBy('timestamp','desc').limit(50).onSnapshot(function(snap){
+    _fraudAll=[];
+    snap.forEach(function(doc){var d=doc.data();d._id=doc.id;_fraudAll.push(d);});
+    renderFraud();
+  });
+}
+function renderFraud() {
+  var grid=document.getElementById('fraud-grid');if(!grid)return;
+  var filtered=_fraudAll;
+  if(_fraudFilter==='flagged') filtered=_fraudAll.filter(function(p){return p.flagged;});
+  else if(_fraudFilter==='approved') filtered=_fraudAll.filter(function(p){return p.approved;});
+  else if(_fraudFilter==='pending') filtered=_fraudAll.filter(function(p){return !p.approved&&!p.flagged;});
+  if(!filtered.length){grid.innerHTML='<div class="empty">Nicio dovada in aceasta categorie.</div>';return;}
+  grid.innerHTML='';
+  filtered.forEach(function(proof){
+    var card=document.createElement('div');
+    card.className='photo-card'+(proof.flagged?' flagged':'')+(proof.approved?' approved':'');
+    var date=proof.timestamp?new Date(proof.timestamp).toLocaleString('ro-RO'):'—';
+    var gpsHtml=(proof.gpsLat&&proof.gpsLng)?
+      '<div class="photo-meta" style="color:var(--blue)">📍 '+proof.gpsLat.toFixed(5)+', '+proof.gpsLng.toFixed(5)+'</div>':
+      '<div class="photo-meta" style="color:rgba(255,59,48,0.6)">⚠ GPS lipsa</div>';
+    var badgeHtml=proof.flagged?'<span class="badge badge-red">ALERTAT</span>':
+      proof.approved?'<span class="badge badge-green">APROBAT</span>':
+      '<span class="badge badge-dim">PENDING</span>';
+    var dis=proof.approved?'disabled':'';
+    card.innerHTML=(proof.url?'<img class="photo-img" src="'+proof.url+'" />':'')+
+      '<div class="photo-body">'+
+        '<div class="photo-meta" style="margin-bottom:6px;"><b>'+esc(proof.alias||'INSIDER')+'</b> '+badgeHtml+'</div>'+
+        '<div class="photo-meta"><span>🕐 '+date+'</span></div>'+gpsHtml+
+        '<div class="photo-actions">'+
+          '<button class="btn btn-green btn-sm" '+dis+' onclick="approveFraud(\''+proof._id+'\')">✓ Aproba</button>'+
+          '<button class="btn btn-danger btn-sm" '+dis+' onclick="rejectFraud(\''+proof._id+'\',\''+(proof.agentId||'')+'\')">× Respinge</button>'+
+        '</div>'+
+      '</div>';
+    grid.appendChild(card);
+  });
+}
+function approveFraud(id){
+  db.collection('photos').doc(id).update({approved:true,flagged:false,reviewedAt:firebase.firestore.FieldValue.serverTimestamp()})
+  .then(function(){showToast('Dovada aprobata!','green');logCEOAction('FRAUD_APPROVE',id);});
+}
+function rejectFraud(id,uid){
+  if(!confirm('Respingi dovada si banezi Insider-ul?'))return;
+  var batch=db.batch();
+  batch.update(db.collection('photos').doc(id),{flagged:true,approved:false,rejected:true,reviewedAt:firebase.firestore.FieldValue.serverTimestamp()});
+  if(uid)batch.update(db.collection('users').doc(uid),{banned:true,balance:0,bannedAt:firebase.firestore.FieldValue.serverTimestamp(),bannedReason:'Frauda VVEil'});
+  batch.commit().then(function(){showToast('Respins si banat!','red');logCEOAction('FRAUD_BAN',uid);});
+}
+
+// ── MOOD CEO ──────────────────────────────────────────────────────────
+function loadMoodCEO() {
+  var lEl=document.getElementById('ds-mood-linis'),aEl=document.getElementById('ds-mood-aglomerat'),hEl=document.getElementById('ds-mood-haos');
+  var cells=document.getElementById('mood-cells-list');
+  if(lEl)lEl.textContent='...';
+  db.collection('vv_mood').limit(100).get().then(function(snap){
+    var tL=0,tA=0,tH=0,html='';
+    snap.docs.forEach(function(d){
+      var data=d.data();
+      var l=data.linis||0,a=data.aglomerat||0,h=data.haos||0;
+      tL+=l;tA+=a;tH+=h;
+      var col=l>=a&&l>=h?'#34d399':a>=h?'#FF9F0A':'#ff3b30';
+      var dom=l>=a&&l>=h?'Linistit':a>=h?'Aglomerat':'Haos';
+      html+='<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;background:rgba(255,255,255,0.03);border-radius:8px;border:0.5px solid rgba(255,255,255,0.06);">'+
+        '<span style="font-family:monospace;font-size:11px;letter-spacing:1px;color:rgba(255,255,255,0.7);">'+d.id.toUpperCase()+'</span>'+
+        '<span style="font-size:11px;color:rgba(255,255,255,0.3);">'+(data.total||0)+' tapuri</span>'+
+        '<span style="font-size:11px;font-weight:700;color:'+col+';">'+dom+'</span></div>';
+    });
+    if(lEl)lEl.textContent=tL;if(aEl)aEl.textContent=tA;if(hEl)hEl.textContent=tH;
+    if(cells)cells.innerHTML=html||'<div class="empty">Nicio celula activa inca.</div>';
+  }).catch(function(){if(lEl)lEl.textContent='ERR';});
+}
+
+// ── SCOUT CEO ─────────────────────────────────────────────────────────
+function loadScoutCEO() {
+  var el=document.getElementById('scout-rules-list');if(!el)return;
+  el.innerHTML='<div class="loading"><div class="spinner"></div></div>';
+  db.collection('vv_static_data').doc('vvscout_config').get().then(function(snap){
+    if(!snap.exists||!snap.data().rules||!snap.data().rules.length){
+      el.innerHTML='<div class="empty">Nicio regula VVScout inca.</div>';return;
+    }
+    el.innerHTML=snap.data().rules.map(function(r){
+      return '<div style="display:flex;align-items:center;gap:10px;padding:10px;background:rgba(255,255,255,0.03);border-radius:8px;border:0.5px solid rgba(255,255,255,0.06);">'+
+        (r.logoUrl?'<img src="'+r.logoUrl+'" style="width:28px;height:28px;border-radius:6px;object-fit:contain;" />':
+          '<div style="width:28px;height:28px;border-radius:6px;background:rgba(255,255,255,0.08);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;">'+esc(r.name[0].toUpperCase())+'</div>')+
+        '<div style="flex:1;min-width:0;">'+
+          '<div style="font-size:13px;font-weight:600;">'+esc(r.name)+'</div>'+
+          '<div style="font-size:10px;color:rgba(255,255,255,0.3);">'+esc(r.type)+(r.domain?' · '+esc(r.domain):'')+(r.scope&&r.scope!=='global'?' · '+esc(r.scope):'')+(r.deblur?' · VV Node':'')+'</div>'+
+        '</div>'+
+        '<span style="font-size:10px;font-weight:600;color:'+(r.active!==false?'#34c759':'rgba(255,255,255,0.25)')+';">'+(r.active!==false?'activ':'off')+'</span></div>';
+    }).join('');
+  }).catch(function(){el.innerHTML='<div class="empty" style="color:var(--red)">Eroare Firestore.</div>';});
+}</script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js">
+// ── UTILS ─────────────────────────────────────────────────────────────
+function esc(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+function showToast(msg, type) {
+  var t=document.createElement('div');
+  t.style.cssText='position:fixed;bottom:30px;left:50%;transform:translateX(-50%);background:'+(type==='green'?'rgba(52,199,89,0.9)':'rgba(255,59,48,0.9)')+';color:#fff;padding:12px 24px;border-radius:20px;font-size:13px;font-weight:700;z-index:99999;backdrop-filter:blur(10px);';
+  t.textContent=msg;document.body.appendChild(t);
+  setTimeout(function(){t.remove();},3000);
+}
+
+// ── FRAUD (VVEil) ─────────────────────────────────────────────────────
+var _fraudFilter='all';
+var _fraudAll=[];
+var _fraudUnsub=null;
+function loadFraud() {
+  var grid=document.getElementById('fraud-grid');
+  if(!grid)return;
+  if(_fraudUnsub)return;
+  grid.innerHTML='<div class="loading"><div class="spinner"></div></div>';
+  _fraudUnsub=db.collection('photos').orderBy('timestamp','desc').limit(50).onSnapshot(function(snap){
+    _fraudAll=[];
+    snap.forEach(function(doc){var d=doc.data();d._id=doc.id;_fraudAll.push(d);});
+    renderFraud();
+  });
+}
+function renderFraud() {
+  var grid=document.getElementById('fraud-grid');if(!grid)return;
+  var filtered=_fraudAll;
+  if(_fraudFilter==='flagged') filtered=_fraudAll.filter(function(p){return p.flagged;});
+  else if(_fraudFilter==='approved') filtered=_fraudAll.filter(function(p){return p.approved;});
+  else if(_fraudFilter==='pending') filtered=_fraudAll.filter(function(p){return !p.approved&&!p.flagged;});
+  if(!filtered.length){grid.innerHTML='<div class="empty">Nicio dovada in aceasta categorie.</div>';return;}
+  grid.innerHTML='';
+  filtered.forEach(function(proof){
+    var card=document.createElement('div');
+    card.className='photo-card'+(proof.flagged?' flagged':'')+(proof.approved?' approved':'');
+    var date=proof.timestamp?new Date(proof.timestamp).toLocaleString('ro-RO'):'—';
+    var gpsHtml=(proof.gpsLat&&proof.gpsLng)?
+      '<div class="photo-meta" style="color:var(--blue)">📍 '+proof.gpsLat.toFixed(5)+', '+proof.gpsLng.toFixed(5)+'</div>':
+      '<div class="photo-meta" style="color:rgba(255,59,48,0.6)">⚠ GPS lipsa</div>';
+    var badgeHtml=proof.flagged?'<span class="badge badge-red">ALERTAT</span>':
+      proof.approved?'<span class="badge badge-green">APROBAT</span>':
+      '<span class="badge badge-dim">PENDING</span>';
+    var dis=proof.approved?'disabled':'';
+    card.innerHTML=(proof.url?'<img class="photo-img" src="'+proof.url+'" />':'')+
+      '<div class="photo-body">'+
+        '<div class="photo-meta" style="margin-bottom:6px;"><b>'+esc(proof.alias||'INSIDER')+'</b> '+badgeHtml+'</div>'+
+        '<div class="photo-meta"><span>🕐 '+date+'</span></div>'+gpsHtml+
+        '<div class="photo-actions">'+
+          '<button class="btn btn-green btn-sm" '+dis+' onclick="approveFraud(\''+proof._id+'\')">✓ Aproba</button>'+
+          '<button class="btn btn-danger btn-sm" '+dis+' onclick="rejectFraud(\''+proof._id+'\',\''+(proof.agentId||'')+'\')">× Respinge</button>'+
+        '</div>'+
+      '</div>';
+    grid.appendChild(card);
+  });
+}
+function approveFraud(id){
+  db.collection('photos').doc(id).update({approved:true,flagged:false,reviewedAt:firebase.firestore.FieldValue.serverTimestamp()})
+  .then(function(){showToast('Dovada aprobata!','green');logCEOAction('FRAUD_APPROVE',id);});
+}
+function rejectFraud(id,uid){
+  if(!confirm('Respingi dovada si banezi Insider-ul?'))return;
+  var batch=db.batch();
+  batch.update(db.collection('photos').doc(id),{flagged:true,approved:false,rejected:true,reviewedAt:firebase.firestore.FieldValue.serverTimestamp()});
+  if(uid)batch.update(db.collection('users').doc(uid),{banned:true,balance:0,bannedAt:firebase.firestore.FieldValue.serverTimestamp(),bannedReason:'Frauda VVEil'});
+  batch.commit().then(function(){showToast('Respins si banat!','red');logCEOAction('FRAUD_BAN',uid);});
+}
+
+// ── MOOD CEO ──────────────────────────────────────────────────────────
+function loadMoodCEO() {
+  var lEl=document.getElementById('ds-mood-linis'),aEl=document.getElementById('ds-mood-aglomerat'),hEl=document.getElementById('ds-mood-haos');
+  var cells=document.getElementById('mood-cells-list');
+  if(lEl)lEl.textContent='...';
+  db.collection('vv_mood').limit(100).get().then(function(snap){
+    var tL=0,tA=0,tH=0,html='';
+    snap.docs.forEach(function(d){
+      var data=d.data();
+      var l=data.linis||0,a=data.aglomerat||0,h=data.haos||0;
+      tL+=l;tA+=a;tH+=h;
+      var col=l>=a&&l>=h?'#34d399':a>=h?'#FF9F0A':'#ff3b30';
+      var dom=l>=a&&l>=h?'Linistit':a>=h?'Aglomerat':'Haos';
+      html+='<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;background:rgba(255,255,255,0.03);border-radius:8px;border:0.5px solid rgba(255,255,255,0.06);">'+
+        '<span style="font-family:monospace;font-size:11px;letter-spacing:1px;color:rgba(255,255,255,0.7);">'+d.id.toUpperCase()+'</span>'+
+        '<span style="font-size:11px;color:rgba(255,255,255,0.3);">'+(data.total||0)+' tapuri</span>'+
+        '<span style="font-size:11px;font-weight:700;color:'+col+';">'+dom+'</span></div>';
+    });
+    if(lEl)lEl.textContent=tL;if(aEl)aEl.textContent=tA;if(hEl)hEl.textContent=tH;
+    if(cells)cells.innerHTML=html||'<div class="empty">Nicio celula activa inca.</div>';
+  }).catch(function(){if(lEl)lEl.textContent='ERR';});
+}
+
+// ── SCOUT CEO ─────────────────────────────────────────────────────────
+function loadScoutCEO() {
+  var el=document.getElementById('scout-rules-list');if(!el)return;
+  el.innerHTML='<div class="loading"><div class="spinner"></div></div>';
+  db.collection('vv_static_data').doc('vvscout_config').get().then(function(snap){
+    if(!snap.exists||!snap.data().rules||!snap.data().rules.length){
+      el.innerHTML='<div class="empty">Nicio regula VVScout inca.</div>';return;
+    }
+    el.innerHTML=snap.data().rules.map(function(r){
+      return '<div style="display:flex;align-items:center;gap:10px;padding:10px;background:rgba(255,255,255,0.03);border-radius:8px;border:0.5px solid rgba(255,255,255,0.06);">'+
+        (r.logoUrl?'<img src="'+r.logoUrl+'" style="width:28px;height:28px;border-radius:6px;object-fit:contain;" />':
+          '<div style="width:28px;height:28px;border-radius:6px;background:rgba(255,255,255,0.08);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;">'+esc(r.name[0].toUpperCase())+'</div>')+
+        '<div style="flex:1;min-width:0;">'+
+          '<div style="font-size:13px;font-weight:600;">'+esc(r.name)+'</div>'+
+          '<div style="font-size:10px;color:rgba(255,255,255,0.3);">'+esc(r.type)+(r.domain?' · '+esc(r.domain):'')+(r.scope&&r.scope!=='global'?' · '+esc(r.scope):'')+(r.deblur?' · VV Node':'')+'</div>'+
+        '</div>'+
+        '<span style="font-size:10px;font-weight:600;color:'+(r.active!==false?'#34c759':'rgba(255,255,255,0.25)')+';">'+(r.active!==false?'activ':'off')+'</span></div>';
+    }).join('');
+  }).catch(function(){el.innerHTML='<div class="empty" style="color:var(--red)">Eroare Firestore.</div>';});
+}</script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js">
+// ── UTILS ─────────────────────────────────────────────────────────────
+function esc(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+function showToast(msg, type) {
+  var t=document.createElement('div');
+  t.style.cssText='position:fixed;bottom:30px;left:50%;transform:translateX(-50%);background:'+(type==='green'?'rgba(52,199,89,0.9)':'rgba(255,59,48,0.9)')+';color:#fff;padding:12px 24px;border-radius:20px;font-size:13px;font-weight:700;z-index:99999;backdrop-filter:blur(10px);';
+  t.textContent=msg;document.body.appendChild(t);
+  setTimeout(function(){t.remove();},3000);
+}
+
+// ── FRAUD (VVEil) ─────────────────────────────────────────────────────
+var _fraudFilter='all';
+var _fraudAll=[];
+var _fraudUnsub=null;
+function loadFraud() {
+  var grid=document.getElementById('fraud-grid');
+  if(!grid)return;
+  if(_fraudUnsub)return;
+  grid.innerHTML='<div class="loading"><div class="spinner"></div></div>';
+  _fraudUnsub=db.collection('photos').orderBy('timestamp','desc').limit(50).onSnapshot(function(snap){
+    _fraudAll=[];
+    snap.forEach(function(doc){var d=doc.data();d._id=doc.id;_fraudAll.push(d);});
+    renderFraud();
+  });
+}
+function renderFraud() {
+  var grid=document.getElementById('fraud-grid');if(!grid)return;
+  var filtered=_fraudAll;
+  if(_fraudFilter==='flagged') filtered=_fraudAll.filter(function(p){return p.flagged;});
+  else if(_fraudFilter==='approved') filtered=_fraudAll.filter(function(p){return p.approved;});
+  else if(_fraudFilter==='pending') filtered=_fraudAll.filter(function(p){return !p.approved&&!p.flagged;});
+  if(!filtered.length){grid.innerHTML='<div class="empty">Nicio dovada in aceasta categorie.</div>';return;}
+  grid.innerHTML='';
+  filtered.forEach(function(proof){
+    var card=document.createElement('div');
+    card.className='photo-card'+(proof.flagged?' flagged':'')+(proof.approved?' approved':'');
+    var date=proof.timestamp?new Date(proof.timestamp).toLocaleString('ro-RO'):'—';
+    var gpsHtml=(proof.gpsLat&&proof.gpsLng)?
+      '<div class="photo-meta" style="color:var(--blue)">📍 '+proof.gpsLat.toFixed(5)+', '+proof.gpsLng.toFixed(5)+'</div>':
+      '<div class="photo-meta" style="color:rgba(255,59,48,0.6)">⚠ GPS lipsa</div>';
+    var badgeHtml=proof.flagged?'<span class="badge badge-red">ALERTAT</span>':
+      proof.approved?'<span class="badge badge-green">APROBAT</span>':
+      '<span class="badge badge-dim">PENDING</span>';
+    var dis=proof.approved?'disabled':'';
+    card.innerHTML=(proof.url?'<img class="photo-img" src="'+proof.url+'" />':'')+
+      '<div class="photo-body">'+
+        '<div class="photo-meta" style="margin-bottom:6px;"><b>'+esc(proof.alias||'INSIDER')+'</b> '+badgeHtml+'</div>'+
+        '<div class="photo-meta"><span>🕐 '+date+'</span></div>'+gpsHtml+
+        '<div class="photo-actions">'+
+          '<button class="btn btn-green btn-sm" '+dis+' onclick="approveFraud(\''+proof._id+'\')">✓ Aproba</button>'+
+          '<button class="btn btn-danger btn-sm" '+dis+' onclick="rejectFraud(\''+proof._id+'\',\''+(proof.agentId||'')+'\')">× Respinge</button>'+
+        '</div>'+
+      '</div>';
+    grid.appendChild(card);
+  });
+}
+function approveFraud(id){
+  db.collection('photos').doc(id).update({approved:true,flagged:false,reviewedAt:firebase.firestore.FieldValue.serverTimestamp()})
+  .then(function(){showToast('Dovada aprobata!','green');logCEOAction('FRAUD_APPROVE',id);});
+}
+function rejectFraud(id,uid){
+  if(!confirm('Respingi dovada si banezi Insider-ul?'))return;
+  var batch=db.batch();
+  batch.update(db.collection('photos').doc(id),{flagged:true,approved:false,rejected:true,reviewedAt:firebase.firestore.FieldValue.serverTimestamp()});
+  if(uid)batch.update(db.collection('users').doc(uid),{banned:true,balance:0,bannedAt:firebase.firestore.FieldValue.serverTimestamp(),bannedReason:'Frauda VVEil'});
+  batch.commit().then(function(){showToast('Respins si banat!','red');logCEOAction('FRAUD_BAN',uid);});
+}
+
+// ── MOOD CEO ──────────────────────────────────────────────────────────
+function loadMoodCEO() {
+  var lEl=document.getElementById('ds-mood-linis'),aEl=document.getElementById('ds-mood-aglomerat'),hEl=document.getElementById('ds-mood-haos');
+  var cells=document.getElementById('mood-cells-list');
+  if(lEl)lEl.textContent='...';
+  db.collection('vv_mood').limit(100).get().then(function(snap){
+    var tL=0,tA=0,tH=0,html='';
+    snap.docs.forEach(function(d){
+      var data=d.data();
+      var l=data.linis||0,a=data.aglomerat||0,h=data.haos||0;
+      tL+=l;tA+=a;tH+=h;
+      var col=l>=a&&l>=h?'#34d399':a>=h?'#FF9F0A':'#ff3b30';
+      var dom=l>=a&&l>=h?'Linistit':a>=h?'Aglomerat':'Haos';
+      html+='<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;background:rgba(255,255,255,0.03);border-radius:8px;border:0.5px solid rgba(255,255,255,0.06);">'+
+        '<span style="font-family:monospace;font-size:11px;letter-spacing:1px;color:rgba(255,255,255,0.7);">'+d.id.toUpperCase()+'</span>'+
+        '<span style="font-size:11px;color:rgba(255,255,255,0.3);">'+(data.total||0)+' tapuri</span>'+
+        '<span style="font-size:11px;font-weight:700;color:'+col+';">'+dom+'</span></div>';
+    });
+    if(lEl)lEl.textContent=tL;if(aEl)aEl.textContent=tA;if(hEl)hEl.textContent=tH;
+    if(cells)cells.innerHTML=html||'<div class="empty">Nicio celula activa inca.</div>';
+  }).catch(function(){if(lEl)lEl.textContent='ERR';});
+}
+
+// ── SCOUT CEO ─────────────────────────────────────────────────────────
+function loadScoutCEO() {
+  var el=document.getElementById('scout-rules-list');if(!el)return;
+  el.innerHTML='<div class="loading"><div class="spinner"></div></div>';
+  db.collection('vv_static_data').doc('vvscout_config').get().then(function(snap){
+    if(!snap.exists||!snap.data().rules||!snap.data().rules.length){
+      el.innerHTML='<div class="empty">Nicio regula VVScout inca.</div>';return;
+    }
+    el.innerHTML=snap.data().rules.map(function(r){
+      return '<div style="display:flex;align-items:center;gap:10px;padding:10px;background:rgba(255,255,255,0.03);border-radius:8px;border:0.5px solid rgba(255,255,255,0.06);">'+
+        (r.logoUrl?'<img src="'+r.logoUrl+'" style="width:28px;height:28px;border-radius:6px;object-fit:contain;" />':
+          '<div style="width:28px;height:28px;border-radius:6px;background:rgba(255,255,255,0.08);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;">'+esc(r.name[0].toUpperCase())+'</div>')+
+        '<div style="flex:1;min-width:0;">'+
+          '<div style="font-size:13px;font-weight:600;">'+esc(r.name)+'</div>'+
+          '<div style="font-size:10px;color:rgba(255,255,255,0.3);">'+esc(r.type)+(r.domain?' · '+esc(r.domain):'')+(r.scope&&r.scope!=='global'?' · '+esc(r.scope):'')+(r.deblur?' · VV Node':'')+'</div>'+
+        '</div>'+
+        '<span style="font-size:10px;font-weight:600;color:'+(r.active!==false?'#34c759':'rgba(255,255,255,0.25)')+';">'+(r.active!==false?'activ':'off')+'</span></div>';
+    }).join('');
+  }).catch(function(){el.innerHTML='<div class="empty" style="color:var(--red)">Eroare Firestore.</div>';});
+}</script>
 <script>
 // ── FIREBASE INIT ────────────────────────────────────────────
 firebase.initializeApp({
@@ -1571,7 +1983,8 @@ function showSection(name) {
     users:'👥 Users Manager', inbox:'📬 Inbox CEO', broadcast:'📡 Broadcast',
     transactions:'🧾 Bon Digital', keys:'🔑 Chei Beta', feedback:'💬 Feedback',
     vvhi:'🧠 VVhi Shadow Mode', charter:'📜 VV Charter', map:'🗺 Harta CEO',
-    audit:'📋 Audit Log', config:'⚙️ Config Live'
+    audit:'📋 Audit Log', config:'⚙️ Config Live',
+    fraud:'🛡 VVEil Fraud', mood:'😌 City Pulse', scout:'⬡ VVScout'
   };
   document.getElementById('topbar-title').textContent = titles[name] || name;
   currentSection = name;
@@ -1590,6 +2003,9 @@ function showSection(name) {
   if (name === 'map') initCEOMap();
   if (name === 'audit') loadAudit();
   if (name === 'config') loadConfig();
+  if (name === 'fraud') loadFraud();
+  if (name === 'mood') loadMoodCEO();
+  if (name === 'scout') loadScoutCEO();
 
   logCEOAction('NAV', name);
 }
@@ -2370,6 +2786,118 @@ function showNotif(msg, isError) {
   clearTimeout(n._t);
   n._t = setTimeout(function() { n.classList.remove('show'); }, 3000);
 }
-</script>
+
+// ── UTILS ─────────────────────────────────────────────────────────────
+function esc(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+function showToast(msg, type) {
+  var t=document.createElement('div');
+  t.style.cssText='position:fixed;bottom:30px;left:50%;transform:translateX(-50%);background:'+(type==='green'?'rgba(52,199,89,0.9)':'rgba(255,59,48,0.9)')+';color:#fff;padding:12px 24px;border-radius:20px;font-size:13px;font-weight:700;z-index:99999;backdrop-filter:blur(10px);';
+  t.textContent=msg;document.body.appendChild(t);
+  setTimeout(function(){t.remove();},3000);
+}
+
+// ── FRAUD (VVEil) ─────────────────────────────────────────────────────
+var _fraudFilter='all';
+var _fraudAll=[];
+var _fraudUnsub=null;
+function loadFraud() {
+  var grid=document.getElementById('fraud-grid');
+  if(!grid)return;
+  if(_fraudUnsub)return;
+  grid.innerHTML='<div class="loading"><div class="spinner"></div></div>';
+  _fraudUnsub=db.collection('photos').orderBy('timestamp','desc').limit(50).onSnapshot(function(snap){
+    _fraudAll=[];
+    snap.forEach(function(doc){var d=doc.data();d._id=doc.id;_fraudAll.push(d);});
+    renderFraud();
+  });
+}
+function renderFraud() {
+  var grid=document.getElementById('fraud-grid');if(!grid)return;
+  var filtered=_fraudAll;
+  if(_fraudFilter==='flagged') filtered=_fraudAll.filter(function(p){return p.flagged;});
+  else if(_fraudFilter==='approved') filtered=_fraudAll.filter(function(p){return p.approved;});
+  else if(_fraudFilter==='pending') filtered=_fraudAll.filter(function(p){return !p.approved&&!p.flagged;});
+  if(!filtered.length){grid.innerHTML='<div class="empty">Nicio dovada in aceasta categorie.</div>';return;}
+  grid.innerHTML='';
+  filtered.forEach(function(proof){
+    var card=document.createElement('div');
+    card.className='photo-card'+(proof.flagged?' flagged':'')+(proof.approved?' approved':'');
+    var date=proof.timestamp?new Date(proof.timestamp).toLocaleString('ro-RO'):'—';
+    var gpsHtml=(proof.gpsLat&&proof.gpsLng)?
+      '<div class="photo-meta" style="color:var(--blue)">📍 '+proof.gpsLat.toFixed(5)+', '+proof.gpsLng.toFixed(5)+'</div>':
+      '<div class="photo-meta" style="color:rgba(255,59,48,0.6)">⚠ GPS lipsa</div>';
+    var badgeHtml=proof.flagged?'<span class="badge badge-red">ALERTAT</span>':
+      proof.approved?'<span class="badge badge-green">APROBAT</span>':
+      '<span class="badge badge-dim">PENDING</span>';
+    var dis=proof.approved?'disabled':'';
+    card.innerHTML=(proof.url?'<img class="photo-img" src="'+proof.url+'" />':'')+
+      '<div class="photo-body">'+
+        '<div class="photo-meta" style="margin-bottom:6px;"><b>'+esc(proof.alias||'INSIDER')+'</b> '+badgeHtml+'</div>'+
+        '<div class="photo-meta"><span>🕐 '+date+'</span></div>'+gpsHtml+
+        '<div class="photo-actions">'+
+          '<button class="btn btn-green btn-sm" '+dis+' onclick="approveFraud(\''+proof._id+'\')">✓ Aproba</button>'+
+          '<button class="btn btn-danger btn-sm" '+dis+' onclick="rejectFraud(\''+proof._id+'\',\''+(proof.agentId||'')+'\')">× Respinge</button>'+
+        '</div>'+
+      '</div>';
+    grid.appendChild(card);
+  });
+}
+function approveFraud(id){
+  db.collection('photos').doc(id).update({approved:true,flagged:false,reviewedAt:firebase.firestore.FieldValue.serverTimestamp()})
+  .then(function(){showToast('Dovada aprobata!','green');logCEOAction('FRAUD_APPROVE',id);});
+}
+function rejectFraud(id,uid){
+  if(!confirm('Respingi dovada si banezi Insider-ul?'))return;
+  var batch=db.batch();
+  batch.update(db.collection('photos').doc(id),{flagged:true,approved:false,rejected:true,reviewedAt:firebase.firestore.FieldValue.serverTimestamp()});
+  if(uid)batch.update(db.collection('users').doc(uid),{banned:true,balance:0,bannedAt:firebase.firestore.FieldValue.serverTimestamp(),bannedReason:'Frauda VVEil'});
+  batch.commit().then(function(){showToast('Respins si banat!','red');logCEOAction('FRAUD_BAN',uid);});
+}
+
+// ── MOOD CEO ──────────────────────────────────────────────────────────
+function loadMoodCEO() {
+  var lEl=document.getElementById('ds-mood-linis'),aEl=document.getElementById('ds-mood-aglomerat'),hEl=document.getElementById('ds-mood-haos');
+  var cells=document.getElementById('mood-cells-list');
+  if(lEl)lEl.textContent='...';
+  db.collection('vv_mood').limit(100).get().then(function(snap){
+    var tL=0,tA=0,tH=0,html='';
+    snap.docs.forEach(function(d){
+      var data=d.data();
+      var l=data.linis||0,a=data.aglomerat||0,h=data.haos||0;
+      tL+=l;tA+=a;tH+=h;
+      var col=l>=a&&l>=h?'#34d399':a>=h?'#FF9F0A':'#ff3b30';
+      var dom=l>=a&&l>=h?'Linistit':a>=h?'Aglomerat':'Haos';
+      html+='<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;background:rgba(255,255,255,0.03);border-radius:8px;border:0.5px solid rgba(255,255,255,0.06);">'+
+        '<span style="font-family:monospace;font-size:11px;letter-spacing:1px;color:rgba(255,255,255,0.7);">'+d.id.toUpperCase()+'</span>'+
+        '<span style="font-size:11px;color:rgba(255,255,255,0.3);">'+(data.total||0)+' tapuri</span>'+
+        '<span style="font-size:11px;font-weight:700;color:'+col+';">'+dom+'</span></div>';
+    });
+    if(lEl)lEl.textContent=tL;if(aEl)aEl.textContent=tA;if(hEl)hEl.textContent=tH;
+    if(cells)cells.innerHTML=html||'<div class="empty">Nicio celula activa inca.</div>';
+  }).catch(function(){if(lEl)lEl.textContent='ERR';});
+}
+
+// ── SCOUT CEO ─────────────────────────────────────────────────────────
+function loadScoutCEO() {
+  var el=document.getElementById('scout-rules-list');if(!el)return;
+  el.innerHTML='<div class="loading"><div class="spinner"></div></div>';
+  db.collection('vv_static_data').doc('vvscout_config').get().then(function(snap){
+    if(!snap.exists||!snap.data().rules||!snap.data().rules.length){
+      el.innerHTML='<div class="empty">Nicio regula VVScout inca.</div>';return;
+    }
+    el.innerHTML=snap.data().rules.map(function(r){
+      return '<div style="display:flex;align-items:center;gap:10px;padding:10px;background:rgba(255,255,255,0.03);border-radius:8px;border:0.5px solid rgba(255,255,255,0.06);">'+
+        (r.logoUrl?'<img src="'+r.logoUrl+'" style="width:28px;height:28px;border-radius:6px;object-fit:contain;" />':
+          '<div style="width:28px;height:28px;border-radius:6px;background:rgba(255,255,255,0.08);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;">'+esc(r.name[0].toUpperCase())+'</div>')+
+        '<div style="flex:1;min-width:0;">'+
+          '<div style="font-size:13px;font-weight:600;">'+esc(r.name)+'</div>'+
+          '<div style="font-size:10px;color:rgba(255,255,255,0.3);">'+esc(r.type)+(r.domain?' · '+esc(r.domain):'')+(r.scope&&r.scope!=='global'?' · '+esc(r.scope):'')+(r.deblur?' · VV Node':'')+'</div>'+
+        '</div>'+
+        '<span style="font-size:10px;font-weight:600;color:'+(r.active!==false?'#34c759':'rgba(255,255,255,0.25)')+';">'+(r.active!==false?'activ':'off')+'</span></div>';
+    }).join('');
+  }).catch(function(){el.innerHTML='<div class="empty" style="color:var(--red)">Eroare Firestore.</div>';});
+}</script>
 </body>
 </html>
