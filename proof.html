@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VV Proof · Verificare Certificat</title>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+    <style>
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body {
+            background: #050507;
+            color: #fff;
+            font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 32px 20px;
+        }
+        .logo {
+            font-size: 10px;
+            letter-spacing: 5px;
+            color: rgba(255,255,255,0.35);
+            font-weight: 800;
+            margin-bottom: 32px;
+        }
+        .card {
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 20px;
+            padding: 32px;
+            max-width: 480px;
+            width: 100%;
+        }
+        .status-valid {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 24px;
+            padding: 16px;
+            background: rgba(52,199,89,0.08);
+            border: 1px solid rgba(52,199,89,0.2);
+            border-radius: 14px;
+        }
+        .status-invalid {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 24px;
+            padding: 16px;
+            background: rgba(255,59,48,0.08);
+            border: 1px solid rgba(255,59,48,0.2);
+            border-radius: 14px;
+        }
+        .status-dot-valid {
+            width: 10px; height: 10px;
+            border-radius: 50%;
+            background: #34c759;
+            flex-shrink: 0;
+            box-shadow: 0 0 8px rgba(52,199,89,0.6);
+        }
+        .status-dot-invalid {
+            width: 10px; height: 10px;
+            border-radius: 50%;
+            background: #ff3b30;
+            flex-shrink: 0;
+        }
+        .status-label { font-size: 13px; font-weight: 800; letter-spacing: 1px; }
+        .status-label.valid { color: #34c759; }
+        .status-label.invalid { color: #ff3b30; }
+        .status-sub { font-size: 11px; color: rgba(255,255,255,0.4); margin-top: 3px; }
+        .cert-id {
+            font-size: 11px;
+            letter-spacing: 3px;
+            color: #0A84FF;
+            font-weight: 800;
+            margin-bottom: 20px;
+        }
+        .row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.06);
+        }
+        .row:last-child { border-bottom: none; }
+        .row-label { font-size: 11px; color: rgba(255,255,255,0.4); }
+        .row-value { font-size: 12px; color: rgba(255,255,255,0.85); font-weight: 600; text-align: right; max-width: 60%; }
+        .map-link {
+            display: block;
+            margin-top: 20px;
+            padding: 14px;
+            background: rgba(10,132,255,0.08);
+            border: 1px solid rgba(10,132,255,0.2);
+            border-radius: 12px;
+            color: #0A84FF;
+            text-align: center;
+            font-size: 12px;
+            font-weight: 700;
+            text-decoration: none;
+            letter-spacing: 0.5px;
+        }
+        .loading { color: rgba(255,255,255,0.35); font-size: 13px; text-align: center; }
+        .footer {
+            margin-top: 24px;
+            font-size: 10px;
+            color: rgba(255,255,255,0.2);
+            text-align: center;
+            letter-spacing: 1px;
+        }
+        .anon-notice {
+            margin-top: 16px;
+            padding: 12px 16px;
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.07);
+            border-radius: 10px;
+            font-size: 11px;
+            color: rgba(255,255,255,0.35);
+            text-align: center;
+            line-height: 1.6;
+        }
+    </style>
+</head>
+<body>
+
+<div class="logo">VV TECHNOLOGIES · PROOF SYSTEM</div>
+
+<div class="card" id="card">
+    <div class="loading" id="loading">Se verifică certificatul...</div>
+</div>
+
+<div class="footer">vv-technologies.github.io · vv-ep-beta · GDPR compliant</div>
+
+<script>
+    var firebaseConfig = {
+        apiKey: "AIzaSyC4bqNAMfXzALm6rqJAMJ3R78sV0OOxJW0",
+        authDomain: "vv-ep-beta.firebaseapp.com",
+        projectId: "vv-ep-beta",
+        storageBucket: "vv-ep-beta.appspot.com",
+        messagingSenderId: "567123456789",
+        appId: "1:567123456789:web:abcdef1234567890"
+    };
+    firebase.initializeApp(firebaseConfig);
+    var db = firebase.firestore();
+
+    function formatDate(iso) {
+        if (!iso) return '—';
+        var d = new Date(iso);
+        return d.toLocaleDateString('ro-RO', { day:'2-digit', month:'long', year:'numeric' }) +
+               ' · ' + d.toLocaleTimeString('ro-RO', { hour:'2-digit', minute:'2-digit' });
+    }
+
+    function render(cert) {
+        var card = document.getElementById('card');
+        var valid = cert && cert.status === 'VALID';
+        card.innerHTML =
+            '<div class="cert-id">' + (cert ? cert.id : 'NECUNOSCUT') + '</div>' +
+            (valid
+                ? '<div class="status-valid"><div class="status-dot-valid"></div><div><div class="status-label valid">CERTIFICAT VALID</div><div class="status-sub">Dovadă verificată de VV Technologies</div></div></div>'
+                : '<div class="status-invalid"><div class="status-dot-invalid"></div><div><div class="status-label invalid">CERTIFICAT INVALID</div><div class="status-sub">Certificatul nu a fost găsit sau este fals</div></div></div>') +
+            (cert ? (
+                '<div class="row"><span class="row-label">Emis la</span><span class="row-value">' + formatDate(cert.issuedAt) + '</span></div>' +
+                '<div class="row"><span class="row-label">Emis de</span><span class="row-value">' + (cert.issuedBy || '—') + '</span></div>' +
+                '<div class="row"><span class="row-label">Geohash</span><span class="row-value">' + (cert.geohash || '—') + '</span></div>' +
+                '<div class="row"><span class="row-label">Coordonate</span><span class="row-value">' + (cert.lat ? cert.lat.toFixed(5) + ', ' + cert.lng.toFixed(5) : 'nedisponibile') + '</span></div>' +
+                '<div class="row"><span class="row-label">Versiune</span><span class="row-value">VV Proof v' + (cert.version || '1.0') + '</span></div>' +
+                (cert.lat && cert.lng ? '<a class="map-link" href="https://www.google.com/maps?q=' + cert.lat + ',' + cert.lng + '" target="_blank">🗺 Deschide locația pe hartă</a>' : '') +
+                '<div class="anon-notice">Acest certificat nu conține date personale ale agentului. Validarea este anonimă conform GDPR.</div>'
+            ) : '') ;
+    }
+
+    var params = new URLSearchParams(window.location.search);
+    var id = params.get('id');
+
+    if (!id) {
+        document.getElementById('loading').textContent = 'Lipsă parametru ?id= în URL.';
+    } else {
+        db.collection('vv_proofs').doc(id).get().then(function(doc) {
+            if (doc.exists) {
+                render(doc.data());
+            } else {
+                render(null);
+            }
+        }).catch(function() {
+            document.getElementById('card').innerHTML = '<div class="loading">Eroare la conectare. Încearcă din nou.</div>';
+        });
+    }
+</script>
+</body>
+</html>
