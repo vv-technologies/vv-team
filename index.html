@@ -1875,18 +1875,16 @@ updateClock();
 // ── AUTH ─────────────────────────────────────────────────────
 firebase.auth().setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(console.error);
 
-auth.onAuthStateChanged(async function(user) {
-  if (!user) { showLogin(); return; }
-  try {
-    var doc = await db.collection('users').doc(user.uid).get();
-    if (doc.exists && doc.data().role === 'ceo') {
-      currentCEO = { uid: user.uid, ...doc.data() };
-      document.getElementById('ceo-alias').textContent = doc.data().alias || 'CEO';
-      document.getElementById('ceo-uid').textContent = user.uid.substring(0,16) + '...';
-      hideLogin();
-      initApp();
-    } else { showLogin(); }
-  } catch(e) { showLogin(); }
+auth.onAuthStateChanged(function(user) {
+  var CEO_UID = 'PthU3uVY5WSPNx8d4XrdXEgszEo1';
+  if (!user || user.uid !== CEO_UID) { showLogin(); return; }
+  currentCEO = { uid: user.uid };
+  var aliasEl = document.getElementById('ceo-alias');
+  var uidEl   = document.getElementById('ceo-uid');
+  if (aliasEl) aliasEl.textContent = 'CEO';
+  if (uidEl)   uidEl.textContent   = user.uid.substring(0,16) + '...';
+  hideLogin();
+  initApp();
 });
 
 function showLogin() { document.getElementById('login-screen').classList.remove('hidden'); }
