@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+﻿﻿<!DOCTYPE html>
 <html lang="ro">
 <head>
 <meta charset="UTF-8">
@@ -1898,8 +1898,16 @@ document.getElementById('login-btn').addEventListener('click', function() {
   btn.textContent = 'SE VERIFICĂ...';
   btn.disabled = true;
   err.textContent = '';
-  auth.signInWithEmailAndPassword(email, pass).catch(function(e) {
-    err.textContent = 'Acces refuzat. Verifică credențialele.';
+  auth.signInWithEmailAndPassword(email, pass).then(function(cred) {
+    if (cred.user.uid !== CEO_UID) {
+      err.textContent = 'UID: ' + cred.user.uid + ' — trimite acest UID lui LEA.';
+      btn.textContent = 'INTRĂ ÎN COMMAND CENTER';
+      btn.disabled = false;
+      auth.signOut();
+    }
+  }).catch(function(e) {
+    var msg = { 'auth/user-not-found':'Cont inexistent în Firebase Auth.', 'auth/wrong-password':'Parolă greșită.', 'auth/invalid-email':'Email invalid.', 'auth/operation-not-allowed':'Email/Parolă neactivat în Firebase Console.' };
+    err.textContent = msg[e.code] || ('Eroare: ' + e.code);
     btn.textContent = 'INTRĂ ÎN COMMAND CENTER';
     btn.disabled = false;
   });
